@@ -1,6 +1,6 @@
-using LectureEvaluationAPI.Domain.Entities;
+using Api.Domain.Entities;
 
-namespace LectureEvaluationAPI.Application.Repositories;
+namespace Api.Application.Repositories;
 
 public interface IRepository<TEntity> where TEntity : class, IEntity
 {
