@@ -15,7 +15,11 @@ public class TrackController : ControllerBase
         // Member 1: Log ClickedAt, update status, and broadcast SignalR event to Admin Dashboard.
         // Member 2: Return a 302 Redirect to the React recovery page for tag-based training.
 
-        //return Redirect($"/recovery/{token}");
-        return Redirect("https://github.com/rob-pasc/Innovationsprojekt");  // for testing purposes
+
+        // Get the frontend URL from environment variables
+        var frontendUrl = _config["FRONTEND_URL"] ?? "http://localhost:5173";
+
+        // Redirect to frontend with a flag
+        return Redirect($"{frontendUrl}?phished=true&token={token}");
     }
 }

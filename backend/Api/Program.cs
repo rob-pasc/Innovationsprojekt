@@ -10,7 +10,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("frontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:5173")
+            policy.WithOrigins("http://localhost:5173", "https://innovationsprojekt-i0m6.onrender.com")
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
