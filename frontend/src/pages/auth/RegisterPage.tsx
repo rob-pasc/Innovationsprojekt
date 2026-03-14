@@ -6,7 +6,7 @@ import { Loader2, UserPlus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FormField, PasswordField } from '@/components/form/FormField';
-import { registerSchema, RegisterFormData, getPasswordStrength } from '@/lib/schemas';
+import { registerSchema, type RegisterFormData } from '@/lib/schemas';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authAPI } from '@/lib/api';
 
@@ -36,7 +36,6 @@ export default function RegisterPage() {
   });
 
   const passwordValue = watch('password');
-  const passwordStrength = getPasswordStrength(passwordValue);
 
   const onSubmit = async (data: RegisterFormData) => {
     setApiError(null);
@@ -54,6 +53,7 @@ export default function RegisterPage() {
       
       // New users always go through onboarding
       navigate('/onboarding');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       const message = error.response?.data?.message || 'Registration failed. Please try again.';
       setApiError(message);
@@ -88,7 +88,6 @@ export default function RegisterPage() {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormField
-            name="email"
             label="Email Address"
             placeholder="you@example.com"
             type="email"
@@ -98,7 +97,6 @@ export default function RegisterPage() {
 
           <div>
             <PasswordField
-              name="password"
               label="Password"
               placeholder="Create a strong password"
               error={errors.password?.message}
@@ -134,7 +132,6 @@ export default function RegisterPage() {
           </div>
 
           <FormField
-            name="confirmPassword"
             label="Confirm Password"
             placeholder="Re-enter your password"
             type="password"

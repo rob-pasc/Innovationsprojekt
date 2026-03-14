@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
 import { useAuthStore } from '@/store/useAuthStore';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -66,6 +66,7 @@ export const recoveryAPI = {
   getRecoveryData: (token: string) =>
     getApiClient().get(`/recovery/${token}`),
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveGameProgress: (gameId: string, state: any, score: number) =>
     getApiClient().put('/games/savegame', { gameId, state, score }),
 };
@@ -75,6 +76,7 @@ export const userAPI = {
   getProfile: () =>
     getApiClient().get('/user/profile'),
   
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateProfile: (data: any) =>
     getApiClient().put('/user/profile', data),
 };

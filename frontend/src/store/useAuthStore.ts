@@ -7,6 +7,7 @@ interface User {
   role: 'user' | 'moderator' | 'admin';
   total_points: number;
   exp_lvl: number;
+  onboarding_completed: boolean;
   created_at: string;
 }
 

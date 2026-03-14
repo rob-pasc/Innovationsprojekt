@@ -6,7 +6,7 @@ import { Loader2, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FormField, PasswordField } from '@/components/form/FormField';
-import { loginSchema, LoginFormData } from '@/lib/schemas';
+import { loginSchema, type LoginFormData } from '@/lib/schemas';
 import { useAuthStore } from '@/store/useAuthStore';
 import { authAPI } from '@/lib/api';
 
@@ -53,6 +53,7 @@ export default function LoginPage() {
       } else {
         navigate('/onboarding');
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       const message = error.response?.data?.message || 'Login failed. Please try again.';
       setApiError(message);
@@ -87,7 +88,6 @@ export default function LoginPage() {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <FormField
-            name="email"
             label="Email Address"
             placeholder="you@example.com"
             type="email"
@@ -96,7 +96,6 @@ export default function LoginPage() {
           />
 
           <PasswordField
-            name="password"
             label="Password"
             placeholder="Enter your password"
             error={errors.password?.message}

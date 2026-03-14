@@ -9,7 +9,7 @@ import {
   Flame,
   BookOpen,
   Play,
-  ArrowRight,
+  // ArrowRight,
   ChevronRight,
   Trophy,
   Target,

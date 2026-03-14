@@ -3,7 +3,7 @@ import RootLayout from '@/layouts/RootLayout';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
-import OnboardingPage from '@/pages/auth/OnboardingPage';
+import OnboardingPage from '@/pages/auth/Onboardingpage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import InvestigationPage from '@/pages/investigation/InvestigationPage';
 import NotFoundPage from '@/pages/NotFoundPage';

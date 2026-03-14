@@ -6,7 +6,7 @@ import {
   Shield,
   Brain,
   Zap,
-  TrendingUp,
+  // TrendingUp,
   CheckCircle2,
   ArrowRight,
   Sparkles,
@@ -30,6 +30,7 @@ export default function HomePage() {
 }
 
 // Authenticated users see a quick dashboard redirect
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function DashboardRedirect({ user }: { user: any }) {
   // If onboarding not completed, redirect to onboarding
   if (!user.onboarding_completed) {

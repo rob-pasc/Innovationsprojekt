@@ -13,7 +13,7 @@ const passwordSchema = z
   .min(8, 'Password must be at least 8 characters')
   .regex(/[A-Z]/, 'Password must contain at least 1 uppercase letter (A-Z)')
   .regex(/[0-9]/, 'Password must contain at least 1 number (0-9)')
-  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain 1 special character (!@#$%^&*)')
+  .regex(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, 'Password must contain 1 special character (!@#$%^&*)')
   .describe('Secure password');
 
 // Login form schema
@@ -66,7 +66,7 @@ export function getPasswordStrength(password: string): {
   if (password.length >= 8) score++;
   if (/[A-Z]/.test(password)) score++;
   if (/[0-9]/.test(password)) score++;
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score++;
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score++;
 
   // Scoring: 1-2 = Weak, 3 = Fair, 4 = Strong
   if (score <= 2) return { score, label: 'Weak', color: 'text-destructive' };
