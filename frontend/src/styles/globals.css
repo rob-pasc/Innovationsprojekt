@@ -1,0 +1,176 @@
+/* src/styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ============================================================
+   *  LIGHT MODE — Warm Ivory + Deep Navy
+   * ============================================================ */
+  :root {
+    /* Surfaces */
+    --background:         40 30% 97%;   /* warm ivory */
+    --foreground:         220 40% 12%;  /* deep navy */
+    --card:               0 0% 100%;
+    --card-foreground:    220 40% 12%;
+    --popover:            0 0% 100%;
+    --popover-foreground: 220 40% 12%;
+
+    /* Border / Input */
+    --border:             220 16% 86%;
+    --input:              220 16% 86%;
+    --ring:               38 95% 50%;   /* amber focus ring */
+
+    /* Muted */
+    --muted:              220 14% 92%;
+    --muted-foreground:   220 12% 46%;
+
+    /* ── Primary Scale — Deep Navy ── */
+    --primary-50:         220 60% 97%;
+    --primary-100:        220 55% 93%;
+    --primary-200:        220 50% 84%;
+    --primary-300:        220 48% 72%;
+    --primary-400:        220 45% 57%;
+    --primary-500:        220 43% 45%;
+    --primary-600:        220 42% 36%;
+    --primary-700:        220 42% 28%;
+    --primary-800:        220 40% 20%;
+    --primary-900:        220 40% 14%;
+    --primary-950:        220 40% 8%;
+
+    --primary:            var(--primary-700);
+    --primary-foreground: 40 30% 97%;
+
+    /* ── Accent Scale — Amber ── */
+    --accent-50:          38 100% 96%;
+    --accent-100:         38 100% 90%;
+    --accent-200:         38 97% 79%;
+    --accent-300:         38 96% 67%;
+    --accent-400:         38 95% 56%;
+    --accent-500:         38 95% 50%;
+    --accent-600:         32 91% 43%;
+    --accent-700:         26 86% 36%;
+    --accent-800:         22 80% 29%;
+    --accent-900:         18 74% 22%;
+    --accent-950:         14 68% 13%;
+
+    --accent:             var(--accent-500);
+    --accent-foreground:  220 40% 10%;
+
+    /* ── Secondary ── */
+    --secondary:          220 14% 92%;
+    --secondary-foreground: 220 40% 22%;
+
+    /* ── Destructive Scale — Crimson ── */
+    --destructive-50:     0 86% 97%;
+    --destructive-100:    0 85% 93%;
+    --destructive-200:    0 82% 84%;
+    --destructive-300:    0 79% 72%;
+    --destructive-400:    0 76% 62%;
+    --destructive-500:    0 73% 54%;
+    --destructive-600:    0 69% 45%;
+    --destructive-700:    0 67% 37%;
+    --destructive-800:    0 64% 29%;
+    --destructive-900:    0 60% 20%;
+    --destructive-950:    0 56% 12%;
+
+    --destructive:        var(--destructive-500);
+    --destructive-foreground: 0 0% 98%;
+
+    /* ── Success Scale — Emerald ── */
+    --success-50:         152 76% 96%;
+    --success-500:        152 60% 38%;
+    --success-900:        152 56% 14%;
+
+    --success:            var(--success-500);
+    --success-foreground: 0 0% 98%;
+
+    /* ── Radius ── */
+    --radius: 0.625rem;
+  }
+
+  /* ============================================================
+   *  DARK MODE — Midnight Navy + Amber
+   * ============================================================ */
+  .dark {
+    /* Surfaces */
+    --background:         222 47% 7%;   /* midnight navy */
+    --foreground:         220 20% 92%;
+    --card:               222 44% 10%;
+    --card-foreground:    220 20% 92%;
+    --popover:            222 44% 10%;
+    --popover-foreground: 220 20% 92%;
+
+    /* Border / Input */
+    --border:             220 28% 20%;
+    --input:              220 28% 18%;
+    --ring:               38 95% 55%;
+
+    /* Muted */
+    --muted:              220 28% 16%;
+    --muted-foreground:   220 16% 52%;
+
+    /* ── Primary Scale — Light Blue-Steel (inverted for dark) ── */
+    --primary-50:         220 40% 8%;
+    --primary-100:        220 40% 14%;
+    --primary-200:        220 40% 20%;
+    --primary-300:        220 40% 30%;
+    --primary-400:        220 42% 44%;
+    --primary-500:        220 50% 58%;
+    --primary-600:        220 58% 68%;
+    --primary-700:        220 62% 76%;
+    --primary-800:        220 64% 84%;
+    --primary-900:        220 66% 91%;
+    --primary-950:        220 68% 96%;
+
+    --primary:            var(--primary-600);
+    --primary-foreground: 222 47% 7%;
+
+    /* ── Accent Scale — Amber (same hue, adjusted brightness) ── */
+    --accent-50:          38 40% 10%;
+    --accent-100:         38 45% 16%;
+    --accent-200:         38 52% 24%;
+    --accent-300:         38 62% 36%;
+    --accent-400:         38 80% 46%;
+    --accent-500:         38 95% 55%;
+    --accent-600:         38 96% 64%;
+    --accent-700:         38 97% 72%;
+    --accent-800:         38 98% 80%;
+    --accent-900:         38 99% 88%;
+    --accent-950:         38 100% 95%;
+
+    --accent:             var(--accent-500);
+    --accent-foreground:  222 47% 7%;
+
+    /* ── Secondary ── */
+    --secondary:          220 32% 14%;
+    --secondary-foreground: 220 16% 72%;
+
+    /* ── Destructive Scale — Crimson ── */
+    --destructive-50:     0 40% 10%;
+    --destructive-100:    0 44% 16%;
+    --destructive-200:    0 52% 24%;
+    --destructive-300:    0 62% 36%;
+    --destructive-400:    0 72% 48%;
+    --destructive-500:    0 78% 58%;
+    --destructive-600:    0 80% 65%;
+    --destructive-700:    0 82% 72%;
+    --destructive-800:    0 84% 80%;
+    --destructive-900:    0 86% 88%;
+    --destructive-950:    0 88% 94%;
+
+    --destructive:        var(--destructive-500);
+    --destructive-foreground: 0 0% 98%;
+
+    /* ── Success Scale — Emerald ── */
+    --success-50:         152 36% 10%;
+    --success-500:        152 56% 46%;
+    --success-900:        152 70% 82%;
+
+    --success:            var(--success-500);
+    --success-foreground: 0 0% 98%;
+
+    /* ── Radius (same) ── */
+    --radius: 0.625rem;
+  }
+}
