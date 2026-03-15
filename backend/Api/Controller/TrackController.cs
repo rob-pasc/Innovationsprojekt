@@ -28,6 +28,6 @@ public class TrackController : ControllerBase
         var frontendUrl = _config["FRONTEND_URL"] ?? "http://localhost:5173";
 
         // Redirect to frontend with a flag
-        return Redirect($"{frontendUrl}?phished=true&token={token}");
+        return Redirect($"{frontendUrl}/alert/{token}");
     }
 }

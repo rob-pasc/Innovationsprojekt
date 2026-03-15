@@ -3,8 +3,9 @@ import RootLayout from '@/layouts/RootLayout';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
-import OnboardingPage from '@/pages/auth/Onboardingpage';
+import OnboardingPage from '@/pages/auth/OnboardingPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
+import AlertPage from '@/pages/alert/AlertPage';
 import InvestigationPage from '@/pages/investigation/InvestigationPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import ProtectedRoute from '@/components/routing/ProtectedRoute';
@@ -14,7 +15,7 @@ import ProtectedRoute from '@/components/routing/ProtectedRoute';
  * 
  * Structure:
  * - Public routes: /, /login, /register
- * - Protected routes: /onboarding, /dashboard, /investigation/:token
+ * - Protected routes: /onboarding, /dashboard, /alert/:token
  * - Catch-all: 404
  */
 export const router = createBrowserRouter([
@@ -51,6 +52,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'alert/:token',
+        element: (
+          <ProtectedRoute>
+            <AlertPage />
           </ProtectedRoute>
         ),
       },
