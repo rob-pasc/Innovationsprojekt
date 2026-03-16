@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DotNetEnv;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
@@ -25,7 +26,17 @@ public class TrackController : ControllerBase
 
 
         // Get the frontend URL from environment variables
-        var frontendUrl = _config["FRONTEND_URL"] ?? "http://localhost:5173";
+        try
+        {
+            Env.Load();
+            Console.WriteLine("✓ Loaded .env file");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠ Warning: Error loading .env file: {ex.Message}");
+        }
+        var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL")
+            ?? throw new InvalidOperationException("FRONTEND_URL environment variable not found");
 
         // Redirect to frontend with a flag
         return Redirect($"{frontendUrl}/alert/{token}");
