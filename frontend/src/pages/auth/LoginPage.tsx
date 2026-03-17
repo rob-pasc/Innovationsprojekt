@@ -48,7 +48,7 @@ export default function LoginPage() {
       setAuthLoading(false);
       
       // Redirect based on onboarding status
-      if (user.onboarding_completed) {
+      if (user.onboardingCompleted) {
         navigate('/dashboard');
       } else {
         navigate('/onboarding');

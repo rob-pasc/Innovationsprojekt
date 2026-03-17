@@ -58,10 +58,24 @@ namespace Api.Application.Services.AuthService
             // Assign "User" role by default
             await _userManager.AddToRoleAsync(user, "User");
 
+            // Generate token so the frontend has an authenticated session immediately
+            var token = await _tokenService.GenerateAccessTokenAsync(user);
+
             return new AuthResponseDTO
             {
                 Success = true,
-                Message = "User registered successfully"
+                Message = "User registered successfully",
+                Token = token,
+                User = new UserDTO
+                {
+                    Id = user.Id,
+                    Email = user.Email!,
+                    Role = "user",
+                    TotalPoints = user.TotalPoints,
+                    ExpLvl = user.ExpLvl,
+                    OnboardingCompleted = user.OnboardingCompleted,
+                    CreatedAt = user.CreatedAt
+                }
             };
         }
 
@@ -88,18 +102,26 @@ namespace Api.Application.Services.AuthService
             // Generate token
             var token = await _tokenService.GenerateAccessTokenAsync(user);
 
+            // Get the user's primary role (take the highest privilege one)
+            var roles = await _userManager.GetRolesAsync(user);
+            var role = roles.Contains("Admin") ? "admin"
+                     : roles.Contains("Moderator") ? "moderator"
+                     : "user";
+
             return new AuthResponseDTO
             {
                 Success = true,
                 Message = "Login successful",
                 Token = token,
-                User = new ApplicationUser
+                User = new UserDTO
                 {
                     Id = user.Id,
                     Email = user.Email!,
-                    UserName = user.UserName!,
+                    Role = role,
                     TotalPoints = user.TotalPoints,
-                    ExpLvl = user.ExpLvl
+                    ExpLvl = user.ExpLvl,
+                    OnboardingCompleted = user.OnboardingCompleted,
+                    CreatedAt = user.CreatedAt
                 }
             };
         }

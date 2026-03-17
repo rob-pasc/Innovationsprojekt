@@ -20,7 +20,8 @@ namespace Api.Application.Services.AuthService
 
         public async Task<string> GenerateAccessTokenAsync(ApplicationUser user)
         {
-            var jwtSecret = _configuration["JwtSettings:Secret"]
+            var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET")
+                ?? _configuration["JWT:Secret"]
                 ?? throw new InvalidOperationException("JWT_SECRET not configured");
 
             var key = Encoding.ASCII.GetBytes(jwtSecret);

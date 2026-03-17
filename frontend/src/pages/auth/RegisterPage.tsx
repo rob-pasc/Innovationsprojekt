@@ -38,7 +38,6 @@ export default function RegisterPage() {
   const passwordValue = watch('password');
 
   const onSubmit = async (data: RegisterFormData) => {
-    alert(import.meta.env.API_URL + '/auth/registe');  //debug
     setApiError(null);
     setAuthLoading(true);
 

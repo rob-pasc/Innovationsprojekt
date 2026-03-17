@@ -225,7 +225,7 @@ Console.WriteLine($"  Listening on: http://localhost:{Environment.GetEnvironment
 Console.WriteLine($"  \n  API Endpoints:");
 Console.WriteLine($"    POST   /api/auth/register");
 Console.WriteLine($"    POST   /api/auth/login");
-Console.WriteLine($"    GET    /api/auth/me");
+Console.WriteLine($"    GET    /api/auth/me  (requires auth)");
 Console.WriteLine($"    GET    /api/protected/user-only");
 Console.WriteLine($"    GET    /api/protected/admin-only");
 Console.WriteLine("═══════════════════════════════════════════════════════\n");
