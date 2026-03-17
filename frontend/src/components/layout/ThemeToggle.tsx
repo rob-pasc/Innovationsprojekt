@@ -11,7 +11,7 @@ export default function ThemeToggle() {
       size="sm"
       onClick={toggleTheme}
       aria-label="Toggle theme"
-      className="w-9 px-0"
+      className="w-9 px-0 text-foreground"
     >
       {theme === 'dark' ? (
         <Sun className="w-4 h-4" />

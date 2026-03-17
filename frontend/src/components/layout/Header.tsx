@@ -62,7 +62,7 @@ export default function Header() {
           </nav>
 
           {/* Desktop Right Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4 text-foreground">
             <ThemeToggle />
             
             {isAuthenticated && user ? (
@@ -70,7 +70,7 @@ export default function Header() {
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" className="text-foreground"size="sm">
                     Sign In
                   </Button>
                 </Link>

@@ -125,7 +125,7 @@ function LandingPage() {
                 </Button>
               </Link>
               <Link to="/login">
-                <Button size="lg" variant="outline">
+                <Button size="lg" variant="outline" className="text-foreground">
                   Sign In
                 </Button>
               </Link>
@@ -291,7 +291,7 @@ function LandingPage() {
               </Button>
             </Link>
             <Link to="/login">
-              <Button size="lg" variant="outline">
+              <Button size="lg" variant="outline" className="text-foreground">
                 Already have an account?
               </Button>
             </Link>
