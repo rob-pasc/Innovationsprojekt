@@ -2,25 +2,20 @@
 using Microsoft.AspNetCore.Mvc;
 using Api.Application.DTOs;
 using Api.Application.Services.AuthService;
-using Api.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
+using Api.Domain.Entities;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(IAuthService authService, UserManager<ApplicationUser> userManager) 
+    : ControllerBase
 {
-    private readonly IAuthService _authService;
-    private readonly UserManager<ApplicationUser> _userManager;
-
-    public AuthController(IAuthService authService, UserManager<ApplicationUser> userManager)
-    {
-        _authService = authService;
-        _userManager = userManager;
-    }
+    private readonly IAuthService _authService = authService;
+    private readonly UserManager<ApplicationUser> _userManager = userManager;
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDTO request)

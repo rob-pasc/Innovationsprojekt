@@ -1,36 +1,43 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Api.Domain;
+using Api.Domain.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Api.Domain;
 
-namespace Api.Infrastructure.Repositories
+namespace Api.Infrastructure.Repositories.PostgresRepository;
+
+public class InnovationsprojektDbContext : IdentityDbContext<ApplicationUser>
 {
-    public class InnovationsprojektDbContext : IdentityDbContext<ApplicationUser>
+    public InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbContext> options)
+        : base(options) { }
+
+    public DbSet<PhishingAttempt> PhishingAttempts { get; set; }
+    public DbSet<EmailTemplate> EmailTemplates { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
     {
-        public InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbContext> options)
-            : base(options) { }
+        base.OnModelCreating(builder);
 
-        // Application-specific DbSets
-        //public DbSet<PhishingAttempt> PhishingAttempts { get; set; }
-        //public DbSet<EmailTemplate> EmailTemplates { get; set; }
-        //public DbSet<SaveGame> SaveGames { get; set; }
-        //public DbSet<LureDomain> LureDomains { get; set; }
-
-        protected override void OnModelCreating(ModelBuilder builder)
+        builder.Entity<PhishingAttempt>(entity =>
         {
-            base.OnModelCreating(builder); // IMPORTANT: Call base first!
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.TrackingToken).IsUnique();
+            entity.Property(e => e.Status)
+                  .HasConversion<string>();
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Template)
+                  .WithMany()
+                  .HasForeignKey(e => e.TemplateId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
 
-            // Configure IdentityUser tables (AspNetUsers, AspNetRoles, AspNetUserRoles, etc.)
-            // Then add your custom configurations below...
-
-            // Example: Configure PhishingAttempt
-            //builder.Entity<PhishingAttempt>(entity =>
-            //{
-            //    entity.HasKey(e => e.Id);
-            //    entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            //    entity.HasOne(e => e.User)
-            //        .WithMany()
-            //        .HasForeignKey("UserId");
-            //});
-        }
+        builder.Entity<EmailTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Tags)
+                  .HasColumnType("jsonb");
+        });
     }
 }

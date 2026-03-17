@@ -1,5 +1,5 @@
 ﻿using Api.Application.DTOs;
-using Api.Domain;
+using Api.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace Api.Application.Services.AuthService

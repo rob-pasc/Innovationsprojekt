@@ -1,7 +1,7 @@
 using Api.Application.Services.AuthService;
-using Api.Domain;
+using Api.Domain.Entities;
 using Api.Infrastructure;
-using Api.Infrastructure.Repositories;
+using Api.Infrastructure.Repositories.PostgresRepository;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;

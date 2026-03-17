@@ -37,6 +37,10 @@ export const router = createBrowserRouter([
         path: 'register',
         element: <RegisterPage />,
       },
+      {
+        path: 'alert/:token',
+        element: <AlertPage />,
+      },
 
       // Protected Routes
       {
@@ -52,14 +56,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <DashboardPage />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: 'alert/:token',
-        element: (
-          <ProtectedRoute>
-            <AlertPage />
           </ProtectedRoute>
         ),
       },

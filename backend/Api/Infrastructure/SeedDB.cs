@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Api.Domain;
+using Api.Domain.Entities;
 
 namespace Api.Infrastructure
 {
