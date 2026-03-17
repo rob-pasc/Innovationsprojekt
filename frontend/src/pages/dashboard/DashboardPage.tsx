@@ -9,7 +9,6 @@ import {
   Flame,
   BookOpen,
   Play,
-  // ArrowRight,
   ChevronRight,
   Trophy,
   Target,
@@ -133,13 +132,13 @@ export default function DashboardPage() {
           <StatCard
             icon={<TrendingUp className="w-5 h-5" />}
             label="Level"
-            value={user.exp_lvl}
+            value={user.expLvl}
             color="bg-blue-500"
           />
           <StatCard
             icon={<Zap className="w-5 h-5" />}
             label="XP"
-            value={user.total_points}
+            value={user.totalPoints}
             color="bg-yellow-500"
           />
           <StatCard
@@ -284,18 +283,18 @@ export default function DashboardPage() {
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-muted-foreground">Current XP</span>
                   <span className="font-semibold text-foreground">
-                    {user.total_points % 500} / 500
+                    {user.totalPoints % 500} / 500
                   </span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-3">
                   <div
                     className="bg-gradient-to-r from-primary to-primary/70 h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${((user.total_points % 500) / 500) * 100}%` }}
+                    style={{ width: `${((user.totalPoints % 500) / 500) * 100}%` }}
                   />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                {500 - (user.total_points % 500)} XP until next level
+                {500 - (user.totalPoints % 500)} XP until next level
               </p>
             </Card>
 

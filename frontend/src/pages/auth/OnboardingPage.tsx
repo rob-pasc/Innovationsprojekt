@@ -47,7 +47,7 @@ export default function OnboardingPage() {
       if (user) {
         setUser({
           ...user,
-          onboarding_completed: true,
+          onboardingCompleted: true,
         });
       }
 
