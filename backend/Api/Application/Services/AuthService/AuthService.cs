@@ -56,6 +56,11 @@ namespace Api.Application.Services.AuthService
             }
 
             // Assign "User" role by default
+            // B2 (known issue): CreateAsync and AddToRoleAsync are not wrapped in a transaction.
+            // If AddToRoleAsync fails (e.g. role not yet seeded, transient DB error), the user
+            // will exist in the database but have no role, causing all [Authorize(Roles="User")]
+            // endpoints to return 403. Fix: wrap both calls in an IDbContextTransaction and
+            // roll back the user creation if role assignment fails.
             await _userManager.AddToRoleAsync(user, "User");
 
             // Generate token so the frontend has an authenticated session immediately

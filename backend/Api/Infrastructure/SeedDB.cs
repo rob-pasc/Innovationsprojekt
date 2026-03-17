@@ -40,6 +40,9 @@ namespace Api.Infrastructure
                     OnboardingCompleted = false
                 };
 
+                // B6 (known issue): Password is hardcoded in source and will appear in git history.
+                // For production, read from an environment variable (e.g. SEED_ADMIN_PASSWORD)
+                // and exclude this seeding block from production deployments entirely.
                 var result = await userManager.CreateAsync(adminUser, "SecurePassword123!");
                 if (result.Succeeded)
                 {
@@ -70,6 +73,7 @@ namespace Api.Infrastructure
                     OnboardingCompleted = false
                 };
 
+                // B6 (known issue): same hardcoded-credential issue as admin above.
                 var result = await userManager.CreateAsync(testUser, "TestPassword123!");
                 if (result.Succeeded)
                 {

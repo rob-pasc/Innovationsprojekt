@@ -1,15 +1,13 @@
-﻿using Api.Domain;
+using Api.Domain;
 using Api.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace Api.Infrastructure.Repositories.PostgresRepository;
+namespace Api.Infrastructure.Persistence;
 
-public class InnovationsprojektDbContext : IdentityDbContext<ApplicationUser>
+public class InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbContext> options) 
+    : IdentityDbContext<ApplicationUser>(options)
 {
-    public InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbContext> options)
-        : base(options) { }
-
     public DbSet<PhishingAttempt> PhishingAttempts { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
 

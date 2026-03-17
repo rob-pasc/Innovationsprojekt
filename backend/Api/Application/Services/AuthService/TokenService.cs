@@ -63,10 +63,4 @@ public class TokenService : ITokenService
         return tokenHandler.WriteToken(token);
     }
 
-    public async Task<string> GenerateRefreshTokenAsync(ApplicationUser user)
-    {
-        // For now, return same as access token
-        // In production, implement separate refresh token logic with longer expiration
-        return await GenerateAccessTokenAsync(user);
-    }
 }

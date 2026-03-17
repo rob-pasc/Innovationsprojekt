@@ -5,11 +5,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
+using Api.Application.Repositories;
 using Api.Application.Services.AuthService;
 using Api.Application.Services.RecoveryService;
 using Api.Domain.Entities;
 using Api.Infrastructure;
-using Api.Infrastructure.Repositories.PostgresRepository;
+using Api.Infrastructure.Persistence;
+using Api.Infrastructure.Repositories;
 
 // ────────────────────────────────────────────────────────────────────────────
 // 1. LOAD ENVIRONMENT VARIABLES
@@ -121,6 +123,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRecoveryService, RecoveryService>();
+builder.Services.AddScoped<IPhishingAttemptRepository, PhishingAttemptRepository>();
 
 Console.WriteLine("✓ Registered custom services (ITokenService, IAuthService)");
 
@@ -128,6 +131,9 @@ Console.WriteLine("✓ Registered custom services (ITokenService, IAuthService)"
 builder.Services.AddControllers();
 
 // Add CORS
+// B7 (known issue): AllowAnyOrigin is intentionally wide for local development.
+// Before production, replace with .WithOrigins("https://your-frontend-domain.com")
+// to prevent cross-origin requests from untrusted sources.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", corsBuilder =>

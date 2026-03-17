@@ -1,22 +1,24 @@
-﻿using Api.Application.DTOs;
-using Api.Infrastructure.Repositories;
-using Api.Infrastructure.Repositories.PostgresRepository;
-using Microsoft.EntityFrameworkCore;
+using Api.Application.DTOs;
+using Api.Application.Repositories;
 
 namespace Api.Application.Services.RecoveryService;
 
-public class RecoveryService(InnovationsprojektDbContext db) 
+public class RecoveryService(IPhishingAttemptRepository phishingAttemptRepository)
     : IRecoveryService
 {
-    private readonly InnovationsprojektDbContext _db = db;
+    private readonly IPhishingAttemptRepository _phishingAttemptRepository = phishingAttemptRepository;
 
     public async Task<RecoveryResponseDTO?> GetRecoveryDataAsync(string token)
     {
-        var attempt = await _db.PhishingAttempts
-            .Include(a => a.Template)
-            .FirstOrDefaultAsync(a => a.TrackingToken == token);
+        var attempt = await _phishingAttemptRepository.FindByTrackingTokenAsync(token);
 
         if (attempt == null)
+            return null;
+
+        // B1 guard: Template should always be populated via Include in the repository,
+        // but a data-integrity issue (orphaned PhishingAttempt row) could leave it null.
+        // Return null so the controller surfaces a 404 rather than a 500.
+        if (attempt.Template == null)
             return null;
 
         return new RecoveryResponseDTO
