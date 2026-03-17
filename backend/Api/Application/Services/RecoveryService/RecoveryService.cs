@@ -1,4 +1,5 @@
 using Api.Application.DTOs;
+using Api.Application.Mapper;
 using Api.Application.Repositories;
 
 namespace Api.Application.Services.RecoveryService;
@@ -21,16 +22,6 @@ public class RecoveryService(IPhishingAttemptRepository phishingAttemptRepositor
         if (attempt.Template == null)
             return null;
 
-        return new RecoveryResponseDTO
-        {
-            AttemptId = attempt.Id,
-            Status = attempt.Status,
-            ClickedAt = attempt.ClickedAt,
-            TemplateName = attempt.Template.Name,
-            TemplateSubject = attempt.Template.Subject,
-            SenderName = attempt.Template.SenderName,
-            Tags = attempt.Template.Tags,
-            DifficultyScore = attempt.Template.DifficultyScore,
-        };
+        return attempt.ToRecoveryResponseDTO();
     }
 }

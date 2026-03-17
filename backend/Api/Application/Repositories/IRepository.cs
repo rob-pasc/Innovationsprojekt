@@ -2,7 +2,7 @@ using Api.Domain.Entities;
 
 namespace Api.Application.Repositories;
 
-public interface IRepository<TEntity> where TEntity : class, IEntity
+public interface IRepository<TEntity> where TEntity : class
 {
     Task<List<TEntity>> FindAllAsync();
 

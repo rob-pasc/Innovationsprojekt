@@ -1,9 +1,9 @@
-﻿namespace Api.Application.DTOs;
+namespace Api.Application.DTOs;
 
-public class AuthResponseDTO
+public record AuthResponseDTO
 {
-    public bool Success { get; set; }
-    public string Message { get; set; } = string.Empty;
-    public string? Token { get; set; }
-    public UserDTO? User { get; set; }
+    public bool Success { get; init; }
+    public string Message { get; init; } = string.Empty;
+    public string? Token { get; init; }
+    public UserDTO? User { get; init; }
 }

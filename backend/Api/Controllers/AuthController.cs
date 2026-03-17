@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Api.Application.DTOs;
+using Api.Application.Mapper;
 using Api.Application.Services.AuthService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -10,7 +11,7 @@ using Api.Domain.Entities;
 namespace Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/auth")]
 public class AuthController(IAuthService authService, UserManager<ApplicationUser> userManager) 
     : ControllerBase
 {
@@ -64,15 +65,6 @@ public class AuthController(IAuthService authService, UserManager<ApplicationUse
                  : roles.Contains("Moderator") ? "moderator"
                  : "user";
 
-        return Ok(new UserDTO
-        {
-            Id = user.Id,
-            Email = user.Email!,
-            Role = role,
-            TotalPoints = user.TotalPoints,
-            ExpLvl = user.ExpLvl,
-            OnboardingCompleted = user.OnboardingCompleted,
-            CreatedAt = user.CreatedAt
-        });
+        return Ok(user.ToUserDTO(role));
     }
 }

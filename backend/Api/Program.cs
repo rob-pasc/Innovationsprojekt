@@ -33,7 +33,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ────────────────────────────────────────────────────────────────────────────
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST")
     ?? throw new InvalidOperationException("DB_HOST environment variable not found");
-var dbPort = Environment.GetEnvironmentVariable("DB_PORT") ?? "5432";
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT") 
+    ?? "5432";
 var dbName = Environment.GetEnvironmentVariable("DB_NAME")
     ?? throw new InvalidOperationException("DB_NAME environment variable not found");
 var dbUser = Environment.GetEnvironmentVariable("DB_USER")
@@ -61,7 +62,6 @@ Console.WriteLine($"════════════════════
 // ────────────────────────────────────────────────────────────────────────────
 // 3. CONFIGURE SERVICES
 // ────────────────────────────────────────────────────────────────────────────
-
 // Add DbContext with PostgreSQL
 builder.Services.AddDbContext<InnovationsprojektDbContext>(options =>
     options.UseNpgsql(connectionString)
@@ -152,7 +152,6 @@ var app = builder.Build();
 // ────────────────────────────────────────────────────────────────────────────
 // 5. CONFIGURE MIDDLEWARE PIPELINE
 // ────────────────────────────────────────────────────────────────────────────
-
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();

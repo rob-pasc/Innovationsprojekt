@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/recovery")]
 public class RecoveryController : ControllerBase
 {
     private readonly IRecoveryService _recoveryService;

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Api.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/protected")]
 [Authorize] // Requires authentication
 public class ProtectedController : ControllerBase
 {
