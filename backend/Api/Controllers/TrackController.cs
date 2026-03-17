@@ -3,18 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 
-namespace Api.Controller;
+namespace Api.Controllers;
 
 [ApiController]
 public class TrackController : ControllerBase
 {
-    private readonly IConfiguration _config;
-
-    public TrackController(IConfiguration config)
-    {
-        _config = config;
-    }
-
     // Mapping various slugs to a single tracking action for high-fidelity simulation
     [HttpGet("/login/user/{token}")]
     [HttpGet("/view/document/{token}")]

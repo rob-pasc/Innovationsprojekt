@@ -1,7 +1,3 @@
-using Api.Application.Services.AuthService;
-using Api.Domain.Entities;
-using Api.Infrastructure;
-using Api.Infrastructure.Repositories.PostgresRepository;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text;
+using Api.Application.Services.AuthService;
+using Api.Application.Services.RecoveryService;
+using Api.Domain.Entities;
+using Api.Infrastructure;
+using Api.Infrastructure.Repositories.PostgresRepository;
 
 // ────────────────────────────────────────────────────────────────────────────
 // 1. LOAD ENVIRONMENT VARIABLES
@@ -119,6 +120,7 @@ builder.Services.AddAuthorization();
 // Add Custom Services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IRecoveryService, RecoveryService>();
 
 Console.WriteLine("✓ Registered custom services (ITokenService, IAuthService)");
 
