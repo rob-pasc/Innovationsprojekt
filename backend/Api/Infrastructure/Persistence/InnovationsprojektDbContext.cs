@@ -10,6 +10,7 @@ public class InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbCo
 {
     public DbSet<PhishingAttempt> PhishingAttempts { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
+    public DbSet<SaveGame> SaveGames { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -36,6 +37,25 @@ public class InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbCo
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Tags)
                   .HasColumnType("jsonb");
+        });
+
+        builder.Entity<SaveGame>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.HasOne(e => e.User)
+                  .WithMany()
+                  .HasForeignKey(e => e.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Attempt)
+                  .WithMany()
+                  .HasForeignKey(e => e.AttemptId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.Property(e => e.StateData)
+                  .HasColumnType("jsonb")
+                  .IsRequired(false);
         });
     }
 }

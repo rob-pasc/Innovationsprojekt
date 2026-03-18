@@ -7,6 +7,7 @@ import OnboardingPage from '@/pages/auth/OnboardingPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import AlertPage from '@/pages/alert/AlertPage';
 import InvestigationPage from '@/pages/investigation/InvestigationPage';
+import DetectiveGamePage from '@/pages/academy/phishing/DetectiveGamePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import ProtectedRoute from '@/components/routing/ProtectedRoute';
 
@@ -64,6 +65,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <InvestigationPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'academy/phishing/detective-game',
+        element: (
+          <ProtectedRoute>
+            <DetectiveGamePage />
           </ProtectedRoute>
         ),
       },

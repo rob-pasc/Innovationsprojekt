@@ -33,4 +33,16 @@ public static class DtoMapper
             DifficultyScore = attempt.Template.DifficultyScore
         };
     }
+
+    extension(SaveGame saveGame)
+    {
+        public SaveGameResponseDTO ToSaveGameResponseDTO(ApplicationUser user, int xpAwarded) => new()
+        {
+            XpAwarded    = xpAwarded,
+            TotalPoints  = user.TotalPoints,
+            ExpLvl       = user.ExpLvl,
+            IsRemediated = true,
+            Message      = $"Training complete! You earned {xpAwarded} XP."
+        };
+    }
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -102,9 +103,22 @@ const RECENT_ACTIVITY = [
   { date: '2 days ago', activity: 'Started learning journey', xp: 0 },
 ];
 
+interface SaveGameResult {
+  xpAwarded: number;
+  totalPoints: number;
+  expLvl: number;
+  isRemediated: boolean;
+  message: string;
+}
+
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // Show a celebration banner when returning from a completed recovery training session
+  const location = useLocation();
+  const levelUpResult = location.state?.levelUp as SaveGameResult | undefined;
+  const [showLevelUp, setShowLevelUp] = useState(!!levelUpResult);
 
   if (!user) return null;
 
@@ -118,6 +132,34 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+
+      {/* ── Level-Up Banner ── shown after completing a recovery training session */}
+      {showLevelUp && levelUpResult && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed top-4 right-4 z-50 max-w-sm w-full"
+        >
+          <Card className="p-4 border-primary bg-primary/10 shadow-lg">
+            <div className="flex items-start gap-3">
+              <Trophy className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-semibold text-sm text-foreground">Training Complete! 🎉</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  +{levelUpResult.xpAwarded} XP earned — you are now Level {levelUpResult.expLvl}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLevelUp(false)}
+                className="text-muted-foreground hover:text-foreground text-xs leading-none mt-0.5"
+              >
+                ✕
+              </button>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {/* Header */}
         <div className="mb-8">

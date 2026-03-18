@@ -8,6 +8,7 @@ using System.Text;
 using Api.Application.Repositories;
 using Api.Application.Services.AuthService;
 using Api.Application.Services.RecoveryService;
+using Api.Application.Services.GameService;
 using Api.Domain.Entities;
 using Api.Infrastructure;
 using Api.Infrastructure.Persistence;
@@ -123,6 +124,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRecoveryService, RecoveryService>();
+builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<IPhishingAttemptRepository, PhishingAttemptRepository>();
 
 Console.WriteLine("✓ Registered custom services (ITokenService, IAuthService)");

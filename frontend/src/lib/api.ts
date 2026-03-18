@@ -65,10 +65,12 @@ export const authAPI = {
 export const recoveryAPI = {
   getRecoveryData: (token: string) =>
     getApiClient().get(`/recovery/${token}`),
-  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  saveGameProgress: (gameId: string, state: any, score: number) =>
-    getApiClient().put('/games/savegame', { gameId, state, score }),
+
+  getGameManifest: (token: string) =>
+    getApiClient().get(`/games/manifest?token=${token}`),
+
+  saveGameProgress: (token: string, score: number, stateData?: object) =>
+    getApiClient().put('/games/savegame', { token, score, stateData: stateData ?? null }),
 };
 
 // User endpoints
