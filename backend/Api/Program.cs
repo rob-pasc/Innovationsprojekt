@@ -47,7 +47,7 @@ var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET")
 
 // Build connection string with timeout for remote databases
 // Timeout=30 gives 30 seconds before timing out (default is 15)
-var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Require;Timeout=30;";
+var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;";
 
 Console.WriteLine($"\n═══════════════════════════════════════════════════════");
 Console.WriteLine($"📡 Database Configuration");
@@ -192,9 +192,33 @@ using (var scope = app.Services.CreateScope())
         await context.Database.OpenConnectionAsync();
         Console.WriteLine("  ✓ Database connection successful!");
 
-        // Run migrations
+        // Run migrations.
+        // Guard: if tables already exist but __EFMigrationsHistory is empty (e.g. the DB
+        // was created outside of EF migrations), MigrateAsync throws 42P07 ("relation already
+        // exists"). We catch that specific error, stamp the history table so EF considers all
+        // migrations applied, then continue normally — subsequent deploys will be clean.
         Console.WriteLine("  Applying database migrations...");
-        await context.Database.MigrateAsync();
+        try
+        {
+            await context.Database.MigrateAsync();
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07")
+        {
+            Console.WriteLine("  ⚠ Tables already exist — syncing migration history...");
+            await context.Database.ExecuteSqlRawAsync("""
+                CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+                    "MigrationId"    character varying(150) NOT NULL,
+                    "ProductVersion" character varying(32)  NOT NULL,
+                    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+                );
+                INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") VALUES
+                    ('20260316151701_InitialCreate',      '10.0.3'),
+                    ('20260317173340_AddPhishingTables',  '10.0.3'),
+                    ('20260318174018_AddSaveGameTable',   '10.0.3')
+                ON CONFLICT DO NOTHING;
+                """);
+            Console.WriteLine("  ✓ Migration history synced — future deploys will migrate cleanly");
+        }
         Console.WriteLine("  ✓ Migrations completed");
 
         // Seed initial data
