@@ -1,15 +1,22 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { recoveryAPI } from '@/lib/api';
+
+interface RecoveryData {
+  templateName: string;
+  tags: string[];
+  difficultyScore: number;
+}
 
 /**
  * AlertPage Component
  *
  * Displays a warning when user clicks on a phishing link from Phase 2 (tracking).
- * Nudges them to start a training module with the token to recover.
+ * Fetches recovery data for the token to show template-specific red flags.
  *
  * Route: /alert/{token}
  * Flow: TrackController redirects here → User sees warning → Clicks "Start Training" → Goes to game page
@@ -18,6 +25,14 @@ export default function AlertPage() {
   const navigate = useNavigate();
   const { token } = useParams<{ token: string }>();
   const [isLoading, setIsLoading] = useState(false);
+  const [recoveryData, setRecoveryData] = useState<RecoveryData | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    recoveryAPI.getRecoveryData(token)
+      .then(res => setRecoveryData(res.data))
+      .catch(() => { /* non-critical — page still works without recovery data */ });
+  }, [token]);
 
   if (!token) {
     return (
@@ -74,12 +89,37 @@ export default function AlertPage() {
           {/* Explanation Card */}
           <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 mb-8">
             <p className="text-sm text-foreground leading-relaxed">
-              This was a simulated phishing email designed to test your media literacy skills. 
+              {recoveryData ? (
+                <>
+                  You fell for <span className="font-semibold">{recoveryData.templateName}</span> — a simulated phishing email designed to test your media literacy skills.
+                </>
+              ) : (
+                <>This was a simulated phishing email designed to test your media literacy skills.</>
+              )}
               <span className="block mt-2 font-semibold text-primary">
                 Don't worry — this is a learning opportunity!
               </span>
             </p>
           </div>
+
+          {/* Red flags from the template */}
+          {recoveryData && recoveryData.tags.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                Red flags in that email
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {recoveryData.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive"
+                  >
+                    {tag.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* What Happened Section */}
           <div className="mb-8">

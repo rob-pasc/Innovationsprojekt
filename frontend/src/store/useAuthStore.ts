@@ -22,10 +22,11 @@ interface AuthStore {
   // Actions
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  updateUser: (partial: Partial<User>) => void;
   logout: () => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  
+
   // API calls (to be implemented)
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
@@ -50,6 +51,8 @@ export const useAuthStore = create<AuthStore>()(
       // State setters
       setUser: (user) => set({ user, isAuthenticated: true }),
       setToken: (token) => set({ token }),
+      updateUser: (partial) =>
+        set(state => ({ user: state.user ? { ...state.user, ...partial } : null })),
       setLoading: (loading) => set({ isLoading: loading }),
       setError: (error) => set({ error }),
 

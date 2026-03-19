@@ -198,8 +198,8 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine("  ✓ Migrations completed");
 
         // Seed initial data
-        Console.WriteLine("  Seeding database with roles and test users...");
-        await SeedDB.Initialize(userManager, roleManager);
+        Console.WriteLine("  Seeding database...");
+        await SeedDB.Initialize(userManager, roleManager, context);
         Console.WriteLine("  ✓ Database seeded");
 
         Console.WriteLine("═══════════════════════════════════════════════════════\n");

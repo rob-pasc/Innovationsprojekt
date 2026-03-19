@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useAuthStore } from './useAuthStore';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       const { recoveryAPI } = await import('@/lib/api');
       const response = await recoveryAPI.saveGameProgress(token, finalScore);
       set({ gameResult: response.data, isSubmitting: false });
+      // Sync updated XP/level into persisted auth store so dashboard shows fresh values
+      useAuthStore.getState().updateUser({
+        totalPoints: response.data.totalPoints,
+        expLvl: response.data.expLvl,
+      });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to save game progress.';
       set({ error: message, isSubmitting: false });
