@@ -5,7 +5,7 @@ namespace Api.Controllers;
 
 [ApiController]
 [Route("api/protected")]
-[Authorize] // Requires authentication
+[Authorize] 
 public class ProtectedController : ControllerBase
 {
     [HttpGet("user-only")]

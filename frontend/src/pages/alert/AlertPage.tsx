@@ -8,8 +8,11 @@ import { recoveryAPI } from '@/lib/api';
 
 interface RecoveryData {
   templateName: string;
+  templateSubject: string;
+  senderName: string;
   tags: string[];
   difficultyScore: number;
+  clickedAt: string | null;
 }
 
 /**
@@ -87,7 +90,7 @@ export default function AlertPage() {
           </p>
 
           {/* Explanation Card */}
-          <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 mb-8">
+          <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 mb-4">
             <p className="text-sm text-foreground leading-relaxed">
               {recoveryData ? (
                 <>
@@ -101,6 +104,20 @@ export default function AlertPage() {
               </span>
             </p>
           </div>
+
+          {/* Spoofed email header preview */}
+          {recoveryData && (
+            <div className="bg-muted/50 border border-border rounded-lg p-3 mb-8 text-xs font-mono space-y-1">
+              <p className="text-muted-foreground">
+                <span className="text-foreground font-semibold">From: </span>
+                {recoveryData.senderName}
+              </p>
+              <p className="text-muted-foreground">
+                <span className="text-foreground font-semibold">Subject: </span>
+                {recoveryData.templateSubject}
+              </p>
+            </div>
+          )}
 
           {/* Red flags from the template */}
           {recoveryData && recoveryData.tags.length > 0 && (

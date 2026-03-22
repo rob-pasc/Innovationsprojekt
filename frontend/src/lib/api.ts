@@ -56,9 +56,12 @@ export function getApiClient(): AxiosInstance {
 export const authAPI = {
   login: (email: string, password: string) =>
     getApiClient().post('/auth/login', { email, password }),
-  
+
   register: (email: string, password: string) =>
     getApiClient().post('/auth/register', { email, password }),
+
+  completeOnboarding: () =>
+    getApiClient().post('/auth/complete-onboarding'),
 };
 
 // Recovery/Investigation endpoints
@@ -69,16 +72,7 @@ export const recoveryAPI = {
   getGameManifest: (token: string) =>
     getApiClient().get(`/games/manifest?token=${token}`),
 
-  saveGameProgress: (token: string, score: number, stateData?: object) =>
-    getApiClient().put('/games/savegame', { token, score, stateData: stateData ?? null }),
+  saveGameProgress: (token: string, score: number, gameModuleId: string, stateData?: object) =>
+    getApiClient().put('/games/savegame', { token, score, gameModuleId, stateData: stateData ?? null }),
 };
 
-// User endpoints
-export const userAPI = {
-  getProfile: () =>
-    getApiClient().get('/user/profile'),
-  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateProfile: (data: any) =>
-    getApiClient().put('/user/profile', data),
-};

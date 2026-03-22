@@ -1,4 +1,5 @@
 using DotNetEnv;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -37,8 +38,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ────────────────────────────────────────────────────────────────────────────
 var dbHost = Environment.GetEnvironmentVariable("DB_HOST")
     ?? throw new InvalidOperationException("DB_HOST environment variable not found");
-var dbPort = Environment.GetEnvironmentVariable("DB_PORT") 
-    ?? "5432";
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT")
+    ?? throw new InvalidOperationException("DB_PORT environment variable not found");
 var dbName = Environment.GetEnvironmentVariable("DB_NAME")
     ?? throw new InvalidOperationException("DB_NAME environment variable not found");
 var dbUser = Environment.GetEnvironmentVariable("DB_USER")
@@ -48,12 +49,13 @@ var dbPassword = Environment.GetEnvironmentVariable("DB_PASSWORD")
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET")
     ?? throw new InvalidOperationException("JWT_SECRET environment variable not found");
 
-// Build connection string with timeout for remote databases
-// Timeout=30 gives 30 seconds before timing out (default is 15)
-var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode=Require;Trust Server Certificate=true;Timeout=30;";
+// Build connection string — SSL is required for remote hosts (Render.com) but must be
+// disabled for local Docker containers which have no SSL configured.
+var isLocal = dbHost is "localhost" or "127.0.0.1";
+var connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPassword};SSL Mode={(isLocal ? "Disable" : "Require")};Trust Server Certificate=true;Timeout=30;";
 
 Console.WriteLine($"\n═══════════════════════════════════════════════════════");
-Console.WriteLine($"📡 Database Configuration");
+Console.WriteLine($" Database Configuration");
 Console.WriteLine($"═══════════════════════════════════════════════════════");
 Console.WriteLine($"  Host: {dbHost}");
 Console.WriteLine($"  Port: {dbPort}");
@@ -135,6 +137,9 @@ builder.Services.AddScoped<IPhishingAttemptRepository, PhishingAttemptRepository
 
 Console.WriteLine("✓ Registered custom services (ITokenService, IAuthService)");
 
+// Add OpenAPI (required for Scalar)
+builder.Services.AddOpenApi();
+
 // Add Controllers
 builder.Services.AddControllers();
 
@@ -190,7 +195,7 @@ using (var scope = app.Services.CreateScope())
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
         Console.WriteLine("\n═══════════════════════════════════════════════════════");
-        Console.WriteLine("📊 Database Initialization");
+        Console.WriteLine(" Database Initialization");
         Console.WriteLine("═══════════════════════════════════════════════════════");
 
         // Test database connection first
@@ -204,27 +209,7 @@ using (var scope = app.Services.CreateScope())
         // exists"). We catch that specific error, stamp the history table so EF considers all
         // migrations applied, then continue normally — subsequent deploys will be clean.
         Console.WriteLine("  Applying database migrations...");
-        try
-        {
-            await context.Database.MigrateAsync();
-        }
-        catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P07")
-        {
-            Console.WriteLine("  ⚠ Tables already exist — syncing migration history...");
-            await context.Database.ExecuteSqlRawAsync("""
-                CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
-                    "MigrationId"    character varying(150) NOT NULL,
-                    "ProductVersion" character varying(32)  NOT NULL,
-                    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
-                );
-                INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion") VALUES
-                    ('20260316151701_InitialCreate',      '10.0.3'),
-                    ('20260317173340_AddPhishingTables',  '10.0.3'),
-                    ('20260318174018_AddSaveGameTable',   '10.0.3')
-                ON CONFLICT DO NOTHING;
-                """);
-            Console.WriteLine("  ✓ Migration history synced — future deploys will migrate cleanly");
-        }
+        await context.Database.MigrateAsync();
         Console.WriteLine("  ✓ Migrations completed");
 
         // Seed initial data
@@ -257,16 +242,10 @@ using (var scope = app.Services.CreateScope())
 }
 
 Console.WriteLine("═══════════════════════════════════════════════════════");
-Console.WriteLine("🚀 Application Starting");
+Console.WriteLine(" Application Starting");
 Console.WriteLine("═══════════════════════════════════════════════════════");
 Console.WriteLine($"  Environment: {app.Environment.EnvironmentName}");
 Console.WriteLine($"  Listening on: http://localhost:{Environment.GetEnvironmentVariable("API_PORT") ?? "5000"}");
-Console.WriteLine($"  \n  API Endpoints:");
-Console.WriteLine($"    POST   /api/auth/register");
-Console.WriteLine($"    POST   /api/auth/login");
-Console.WriteLine($"    GET    /api/auth/me  (requires auth)");
-Console.WriteLine($"    GET    /api/protected/user-only");
-Console.WriteLine($"    GET    /api/protected/admin-only");
 Console.WriteLine("═══════════════════════════════════════════════════════\n");
 
 app.Run();

@@ -8,25 +8,25 @@
 
 	<ItemGroup>
 		<!-- OpenAPI & Documentation -->
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
-		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
-		<PackageReference Include="Scalar.AspNetCore" Version="2.12.47" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />
+		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+		<PackageReference Include="Scalar.AspNetCore" Version="2.13.13" />
 
 		<!-- Entity Framework Core -->
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.3">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.5">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
-		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
 
 		<!-- Authentication & Security -->
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
-		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.1" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.2" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.16.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
 		<PackageReference Include="BCrypt.Net-Core" Version="1.6.0" />
 
 		<!-- Environment Variables -->

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '@/store/useAuthStore';
+import { useAuthStore, type User } from '@/store/useAuthStore';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -30,10 +30,9 @@ export default function HomePage() {
 }
 
 // Authenticated users see a quick dashboard redirect
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function DashboardRedirect({ user }: { user: any }) {
+function DashboardRedirect({ user }: { user: User }) {
   // If onboarding not completed, redirect to onboarding
-  if (!user.onboarding_completed) {
+  if (!user.onboardingCompleted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-6">
@@ -67,7 +66,7 @@ function DashboardRedirect({ user }: { user: any }) {
             Welcome back, {user.email.split('@')[0]}! 👋
           </h1>
           <p className="text-lg text-muted-foreground">
-            You're at level {user.exp_lvl} with {user.total_points} points
+            You're at level {user.expLvl} with {user.totalPoints} points
           </p>
         </div>
 

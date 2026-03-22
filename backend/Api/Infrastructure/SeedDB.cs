@@ -9,9 +9,10 @@ public static class SeedDB
 {
     // ── Known dev constants ────────────────────────────────────────────────────
     // Fixed GUIDs so re-runs never create duplicates and the token is easy to type.
-    private static readonly Guid DevTemplateId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
-    private static readonly Guid DevAttemptId  = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
-    public  const string DevTrackingToken      = "dev-phishing-test-001";
+    private static readonly Guid DevTemplateId    = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+    private static readonly Guid DevAttemptId     = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
+    private static readonly Guid DevGameModuleId  = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+    public  const string DevTrackingToken         = "dev-phishing-test-001";
 
     public static async Task Initialize(
         UserManager<ApplicationUser> userManager,
@@ -94,6 +95,21 @@ public static class SeedDB
             }
         }
 
+        // ── Dev GameModule ─────────────────────────────────────────────────────
+        // One module per game type; new types are added here as the platform grows.
+        if (await db.GameModules.FindAsync(DevGameModuleId) == null)
+        {
+            db.GameModules.Add(new GameModule
+            {
+                Id    = DevGameModuleId,
+                Type  = ModuleType.PhishingDetective,
+                Paths = null
+            });
+
+            await db.SaveChangesAsync();
+            Console.WriteLine($"✓ Seeded dev GameModule: PhishingDetective (id={DevGameModuleId})");
+        }
+
         // ── Dev EmailTemplate ──────────────────────────────────────────────────
         // Fixed ID so this block is idempotent across restarts.
         if (await db.EmailTemplates.FindAsync(DevTemplateId) == null)
@@ -104,7 +120,7 @@ public static class SeedDB
                 Name          = "HR Password Reset",
                 Subject       = "Urgent: Your password expires today",
                 SenderName    = "IT Support",
-                Slug          = "hr-password-reset",
+                Slug          = "login-user",
                 BodyHtml      = "<p>Dear Employee,</p>"
                               + "<p>Your password <strong>expires today</strong>. "
                               + "Click the link below immediately to avoid losing access.</p>"

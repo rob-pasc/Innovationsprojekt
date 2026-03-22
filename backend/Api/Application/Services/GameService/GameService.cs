@@ -4,6 +4,7 @@ using Api.Application.Repositories;
 using Api.Domain.Entities;
 using Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Application.Services.GameService;
 
@@ -24,13 +25,16 @@ public class GameService(
 
         // Decision logic: for MVP only one game type exists.
         // Future: inspect attempt.Template.Tags and user.ExpLvl to pick the most effective variant.
-        var gameType = "phishing-detective";
+        var gameModule = await db.GameModules
+            .FirstOrDefaultAsync(m => m.Type == ModuleType.PhishingDetective);
+        if (gameModule == null) return null;
 
         return new GameManifestResponseDTO
         {
-            GameType = gameType,
-            Version  = "1.0",
-            Config   = new GameConfigDTO
+            GameModuleId = gameModule.Id,
+            GameType     = "phishing-detective",
+            Version      = "1.0",
+            Config       = new GameConfigDTO
             {
                 Tags            = attempt.Template.Tags,
                 DifficultyScore = attempt.Template.DifficultyScore,
@@ -80,7 +84,7 @@ public class GameService(
         var saveGame = new SaveGame
         {
             UserId          = userId,
-            AttemptId       = attempt.Id,
+            GameModuleId    = dto.GameModuleId,
             Score           = dto.Score,
             XpAwarded       = xpAwarded,
             DifficultyLevel = attempt.Template.DifficultyScore,

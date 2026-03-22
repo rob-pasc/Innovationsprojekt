@@ -4,6 +4,7 @@ import { Loader2, ChevronRight, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuthStore } from '@/store/useAuthStore';
+import { authAPI } from '@/lib/api';
 
 /**
  * OnboardingPage Component
@@ -40,16 +41,8 @@ export default function OnboardingPage() {
   const handleComplete = async () => {
     setIsLoading(true);
     try {
-      // TODO: Call API to mark onboarding as complete
-      // await userAPI.completeOnboarding({ goals: selectedGoals, difficulty: selectedDifficulty });
-
-      // Update local user state
-      if (user) {
-        setUser({
-          ...user,
-          onboardingCompleted: true,
-        });
-      }
+      const response = await authAPI.completeOnboarding();
+      setUser(response.data);
 
       setCurrentStep('complete');
       

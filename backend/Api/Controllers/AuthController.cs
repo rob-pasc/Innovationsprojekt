@@ -46,6 +46,31 @@ public class AuthController(IAuthService authService, UserManager<ApplicationUse
         return Ok(result);
     }
 
+    [HttpPost("complete-onboarding")]
+    [Authorize]
+    public async Task<IActionResult> CompleteOnboarding()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                  ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (userId == null)
+            return Unauthorized();
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null)
+            return NotFound();
+
+        user.OnboardingCompleted = true;
+        await _userManager.UpdateAsync(user);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        var role = roles.Contains("Admin") ? "admin"
+                 : roles.Contains("Moderator") ? "moderator"
+                 : "user";
+
+        return Ok(user.ToUserDTO(role));
+    }
+
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> Me()

@@ -7,8 +7,8 @@ public class SaveGame
     public string UserId { get; set; } = string.Empty;
     public ApplicationUser User { get; set; } = null!;
 
-    public Guid AttemptId { get; set; }
-    public PhishingAttempt Attempt { get; set; } = null!;
+    public Guid GameModuleId { get; set; }
+    public GameModule GameModule { get; set; } = null!;
 
     public int Score { get; set; }           // 0–100
     public int XpAwarded { get; set; }

@@ -11,6 +11,7 @@ interface GameConfig {
 }
 
 interface GameManifest {
+  gameModuleId: string;
   gameType: string;
   version: string;
   config: GameConfig;
@@ -29,6 +30,7 @@ type GamePhase = 'loading' | 'briefing' | 'playing' | 'feedback' | 'complete';
 interface GameStore {
   // Session data
   token: string | null;
+  gameModuleId: string | null;
   manifest: GameManifest | null;
 
   // Game progress
@@ -58,6 +60,7 @@ interface GameStore {
 
 const INITIAL_STATE = {
   token: null,
+  gameModuleId: null,
   manifest: null,
   currentRound: 0,
   totalRounds: 5,
@@ -80,7 +83,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     try {
       const { recoveryAPI } = await import('@/lib/api');
       const response = await recoveryAPI.getGameManifest(token);
-      set({ manifest: response.data, phase: 'briefing' });
+      set({ manifest: response.data, gameModuleId: response.data.gameModuleId, phase: 'briefing' });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load game data.';
       set({ error: message, phase: 'loading' });
@@ -110,14 +113,14 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   submitGame: async () => {
-    const { token, score, totalRounds } = get();
-    if (!token) return;
+    const { token, gameModuleId, score, totalRounds } = get();
+    if (!token || !gameModuleId) return;
 
     set({ isSubmitting: true, error: null });
     try {
       const finalScore = Math.round((score / totalRounds) * 100);
       const { recoveryAPI } = await import('@/lib/api');
-      const response = await recoveryAPI.saveGameProgress(token, finalScore);
+      const response = await recoveryAPI.saveGameProgress(token, finalScore, gameModuleId);
       set({ gameResult: response.data, isSubmitting: false });
       // Sync updated XP/level into persisted auth store so dashboard shows fresh values
       useAuthStore.getState().updateUser({

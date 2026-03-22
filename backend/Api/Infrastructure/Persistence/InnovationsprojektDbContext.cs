@@ -11,6 +11,7 @@ public class InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbCo
     public DbSet<PhishingAttempt> PhishingAttempts { get; set; }
     public DbSet<EmailTemplate> EmailTemplates { get; set; }
     public DbSet<SaveGame> SaveGames { get; set; }
+    public DbSet<GameModule> GameModules { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -50,12 +51,22 @@ public class InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbCo
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne(e => e.Attempt)
+            entity.HasOne(e => e.GameModule)
                   .WithMany()
-                  .HasForeignKey(e => e.AttemptId)
-                  .OnDelete(DeleteBehavior.Cascade);
+                  .HasForeignKey(e => e.GameModuleId)
+                  .OnDelete(DeleteBehavior.Restrict);
 
             entity.Property(e => e.StateData)
+                  .HasColumnType("jsonb")
+                  .IsRequired(false);
+        });
+
+        builder.Entity<GameModule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type)
+                  .HasConversion<string>();
+            entity.Property(e => e.Paths)
                   .HasColumnType("jsonb")
                   .IsRequired(false);
         });

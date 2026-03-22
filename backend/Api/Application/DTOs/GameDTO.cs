@@ -14,6 +14,7 @@ public record GameConfigDTO
 
 public record GameManifestResponseDTO
 {
+    public Guid GameModuleId { get; init; }
     public string GameType { get; init; } = string.Empty;   // e.g. "phishing-detective"
     public string Version { get; init; } = "1.0";
     public GameConfigDTO Config { get; init; } = new();
@@ -24,6 +25,7 @@ public record GameManifestResponseDTO
 public record SaveGameRequestDTO
 {
     public string Token { get; init; } = string.Empty;   // PhishingAttempt.TrackingToken
+    public Guid GameModuleId { get; init; }               // which game module was played
     public int Score { get; init; }                       // 0–100
     public JsonElement? StateData { get; init; }          // optional game replay data
 }

@@ -51,11 +51,12 @@ public class TokenService : ITokenService
         );
 
         // Create JWT token
+        var expiryDays = int.TryParse(_configuration["JWT:ExpiryDays"], out var d) ? d : 7;
         var token = new JwtSecurityToken(
             issuer: null,
             audience: null,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(15),
+            expires: DateTime.UtcNow.AddDays(expiryDays),
             signingCredentials: signingCredentials
         );
 
