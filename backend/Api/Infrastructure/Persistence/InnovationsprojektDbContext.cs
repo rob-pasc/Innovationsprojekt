@@ -22,6 +22,8 @@ public class InnovationsprojektDbContext(DbContextOptions<InnovationsprojektDbCo
             entity.HasIndex(e => e.TrackingToken).IsUnique();
             entity.Property(e => e.Status)
                   .HasConversion<string>();
+            entity.Property(e => e.SentAt)
+                  .IsRequired(false);
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)

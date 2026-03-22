@@ -1,10 +1,10 @@
-﻿using Api.Domain.Entities;
 using System.Text.Json.Serialization;
 
 namespace Api.Domain.Entities;
 
 public enum PhishingStatus
 {
+    Pending,
     Sent,
     Clicked,
     Remediated
@@ -22,10 +22,10 @@ public class PhishingAttempt
 
     public string TrackingToken { get; set; } = string.Empty;
 
-    public DateTime SentAt { get; set; } = DateTime.UtcNow;
+    public DateTime? SentAt { get; set; }
     public DateTime? ClickedAt { get; set; }
     public DateTime? OpenedAt { get; set; }
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public PhishingStatus Status { get; set; } = PhishingStatus.Sent;
+    public PhishingStatus Status { get; set; } = PhishingStatus.Pending;
 }
