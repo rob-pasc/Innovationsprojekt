@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Loader2, AlertTriangle, ShieldAlert } from 'lucide-react';
@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/store/useGameStore';
 import PhishingDetectiveGame from './components/PhishingDetectiveGame';
+import GameSelectionScreen from './components/GameSelectionScreen';
+import DetectiveStoryGame from './components/DetectiveStoryGame';
 import { selectQuestionsForTags } from './data/questions';
 import type { GameQuestion } from './data/questions';
 
@@ -26,7 +28,11 @@ export default function DetectiveGamePage() {
   const navigate = useNavigate();
   const token = searchParams.get('token');
 
-  const { phase, manifest, gameResult, error, initSession, startGame, reset } = useGameStore();
+  const {
+    phase, manifest, gameResult, error,
+    selectedGameMode,
+    initSession, startGame, selectGameMode, submitGameWithRawScore, reset,
+  } = useGameStore();
 
   // Derive questions from manifest tags once manifest is loaded
   const questions = useMemo(
@@ -35,11 +41,11 @@ export default function DetectiveGamePage() {
     [manifest?.config.tags.join(',')]
   );
 
-  // Resolve game component from registry
+  // Resolve game component from registry (used by quiz mode)
   const GameComponent = manifest ? GAME_REGISTRY[manifest.gameType] : undefined;
 
-  // Track whether we've already triggered navigation to avoid double-fire
-  const [navigated, setNavigated] = useState(false);
+  // Ref-based guard — mutations don't trigger re-renders so the timer is never cancelled prematurely
+  const navigatedRef = useRef(false);
 
   // Init on mount, cleanup on unmount
   useEffect(() => {
@@ -49,16 +55,24 @@ export default function DetectiveGamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Navigate to dashboard 3 s after game result is saved
+  // Navigate to dashboard 3 s after phase becomes 'complete'.
+  // Using a ref (not state) so that subsequent store updates (e.g. gameResult
+  // changing from placeholder → real API data) don't re-run the effect and
+  // cancel the timer via cleanup.
   useEffect(() => {
-    if (phase === 'complete' && gameResult && !navigated) {
-      setNavigated(true);
-      const t = setTimeout(() => {
-        navigate('/dashboard', { state: { levelUp: gameResult } });
-      }, 3000);
-      return () => clearTimeout(t);
-    }
-  }, [phase, gameResult, navigated, navigate]);
+    if (phase !== 'complete' || navigatedRef.current) return;
+    navigatedRef.current = true;
+    const t = setTimeout(() => {
+      navigate('/dashboard', { state: { levelUp: useGameStore.getState().gameResult } });
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [phase, navigate]);
+
+  // Called when DetectiveStoryGame completes — submits the raw 0-100 score
+  const handleStoryComplete = (score: number) => {
+    submitGameWithRawScore(score);
+  };
+
 
   // ── No token ────────────────────────────────────────────────────────────────
   if (!token) {
@@ -107,23 +121,6 @@ export default function DetectiveGamePage() {
   // ── Briefing ────────────────────────────────────────────────────────────────
   if (phase === 'briefing' && manifest) {
     const { config } = manifest;
-
-    if (!GameComponent) {
-      return (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <Card className="p-8 max-w-sm w-full text-center space-y-4">
-            <AlertTriangle className="w-10 h-10 text-destructive mx-auto" />
-            <p className="font-semibold text-foreground">Unsupported Game Type</p>
-            <p className="text-sm text-muted-foreground">
-              Game type &quot;{manifest.gameType}&quot; is not available yet.
-            </p>
-            <Button variant="outline" onClick={() => navigate('/dashboard')}>
-              Back to Dashboard
-            </Button>
-          </Card>
-        </div>
-      );
-    }
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -186,12 +183,11 @@ export default function DetectiveGamePage() {
 
             {/* Instructions */}
             <p className="text-sm text-muted-foreground text-center">
-              You&apos;ll see <strong className="text-foreground">5 email scenarios</strong>. For each one,
-              decide whether it&apos;s a real email or a phishing attempt.
+              Choose a training mode on the next screen to earn back your points.
             </p>
 
             <Button className="w-full" size="lg" onClick={startGame}>
-              Begin Training 🚀
+              Choose Training Mode 🚀
             </Button>
           </Card>
         </motion.div>
@@ -199,9 +195,14 @@ export default function DetectiveGamePage() {
     );
   }
 
+  // ── Game Mode Selection ──────────────────────────────────────────────────────
+  if (phase === 'selection') {
+    return <GameSelectionScreen onSelect={selectGameMode} />;
+  }
+
   // ── Playing / Feedback / Complete ───────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8">
+    <div className={selectedGameMode === 'detective-story' ? '' : 'min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8'}>
       {phase === 'complete' && gameResult && (
         <motion.p
           initial={{ opacity: 0 }}
@@ -211,7 +212,10 @@ export default function DetectiveGamePage() {
           Redirecting to dashboard in a moment…
         </motion.p>
       )}
-      {GameComponent && <GameComponent questions={questions} />}
+      {selectedGameMode === 'detective-story'
+        ? <DetectiveStoryGame onComplete={handleStoryComplete} />
+        : GameComponent && <GameComponent questions={questions} />
+      }
     </div>
   );
 }

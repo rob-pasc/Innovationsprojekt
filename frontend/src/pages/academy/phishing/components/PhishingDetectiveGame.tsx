@@ -97,7 +97,7 @@ export default function PhishingDetectiveGame({ questions }: PhishingDetectiveGa
           <Button
             variant="outline"
             size="lg"
-            className="h-14 text-base font-semibold border-2 hover:border-green-500 hover:bg-green-500/10 hover:text-green-600"
+            className="h-14 text-base font-semibold border-2 hover:border-green-500 hover:bg-green-500/10 hover:text-green-600 text-foreground bg-green-500/60"
             onClick={() => handleAnswer(false)}
           >
             ✅ Real Email

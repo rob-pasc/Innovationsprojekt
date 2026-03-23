@@ -25,7 +25,8 @@ interface GameResult {
   message: string;
 }
 
-type GamePhase = 'loading' | 'briefing' | 'playing' | 'feedback' | 'complete';
+type GamePhase = 'loading' | 'briefing' | 'selection' | 'playing' | 'feedback' | 'complete';
+type GameMode = 'quiz' | 'detective-story';
 
 interface GameStore {
   // Session data
@@ -41,6 +42,7 @@ interface GameStore {
 
   // UI state
   phase: GamePhase;
+  selectedGameMode: GameMode | null;
   isSubmitting: boolean;
   error: string | null;
 
@@ -50,9 +52,11 @@ interface GameStore {
   // Actions
   initSession: (token: string) => Promise<void>;
   startGame: () => void;
+  selectGameMode: (mode: GameMode) => void;
   recordAnswer: (wasCorrect: boolean) => void;
   nextRound: () => void;
   submitGame: () => Promise<void>;
+  submitGameWithRawScore: (rawScore: number) => Promise<void>;
   reset: () => void;
 }
 
@@ -67,6 +71,7 @@ const INITIAL_STATE = {
   score: 0,
   answers: [] as boolean[],
   phase: 'loading' as GamePhase,
+  selectedGameMode: null,
   isSubmitting: false,
   error: null,
   gameResult: null,
@@ -91,7 +96,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   startGame: () => {
-    set({ phase: 'playing' });
+    set({ phase: 'selection' });
+  },
+
+  selectGameMode: (mode: GameMode) => {
+    set({ selectedGameMode: mode, phase: 'playing' });
   },
 
   recordAnswer: (wasCorrect: boolean) => {
@@ -123,6 +132,33 @@ export const useGameStore = create<GameStore>()((set, get) => ({
       const response = await recoveryAPI.saveGameProgress(token, finalScore, gameModuleId);
       set({ gameResult: response.data, isSubmitting: false });
       // Sync updated XP/level into persisted auth store so dashboard shows fresh values
+      useAuthStore.getState().updateUser({
+        totalPoints: response.data.totalPoints,
+        expLvl: response.data.expLvl,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to save game progress.';
+      set({ error: message, isSubmitting: false });
+    }
+  },
+
+  submitGameWithRawScore: async (rawScore: number) => {
+    const { token, gameModuleId } = get();
+    if (!token || !gameModuleId) return;
+
+    // Transition immediately so the UI unmounts the game and shows the redirect message.
+    // The API call runs in the background and updates gameResult when it resolves.
+    set({
+      phase: 'complete',
+      gameResult: { xpAwarded: 0, totalPoints: 0, expLvl: 0, isRemediated: false, message: 'Saving…' },
+      isSubmitting: true,
+      error: null,
+    });
+
+    try {
+      const { recoveryAPI } = await import('@/lib/api');
+      const response = await recoveryAPI.saveGameProgress(token, rawScore, gameModuleId);
+      set({ gameResult: response.data, isSubmitting: false });
       useAuthStore.getState().updateUser({
         totalPoints: response.data.totalPoints,
         expLvl: response.data.expLvl,
