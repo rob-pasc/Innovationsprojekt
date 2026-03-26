@@ -14,4 +14,16 @@ public class PhishingAttemptRepository(InnovationsprojektDbContext db)
         => _db.PhishingAttempts
               .Include(a => a.Template)
               .FirstOrDefaultAsync(a => a.TrackingToken == token);
+
+    public async Task AddAsync(PhishingAttempt attempt, CancellationToken cancellationToken = default)
+    {
+        await _db.PhishingAttempts.AddAsync(attempt, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(PhishingAttempt attempt, CancellationToken cancellationToken = default)
+    {
+        _db.PhishingAttempts.Update(attempt);
+        await _db.SaveChangesAsync(cancellationToken);
+    }
 }

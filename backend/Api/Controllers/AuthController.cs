@@ -1,30 +1,24 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Api.Application.DTOs;
-using Api.Application.Mapper;
 using Api.Application.Services.AuthService;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.JsonWebTokens;
 using System.Security.Claims;
-using Api.Domain.Entities;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController(IAuthService authService, UserManager<ApplicationUser> userManager) 
+public class AuthController(IAuthService authService, IUserManagementService userManagementService)
     : ControllerBase
 {
-    private readonly IAuthService _authService = authService;
-    private readonly UserManager<ApplicationUser> _userManager = userManager;
-
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDTO request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var result = await _authService.RegisterAsync(request);
+        var result = await authService.RegisterAsync(request);
 
         if (!result.Success)
             return BadRequest(result);
@@ -38,7 +32,7 @@ public class AuthController(IAuthService authService, UserManager<ApplicationUse
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var result = await _authService.LoginAsync(request);
+        var result = await authService.LoginAsync(request);
 
         if (!result.Success)
             return Unauthorized(result);
@@ -50,46 +44,29 @@ public class AuthController(IAuthService authService, UserManager<ApplicationUse
     [Authorize]
     public async Task<IActionResult> CompleteOnboarding()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                  ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
 
-        if (userId == null)
-            return Unauthorized();
+        var userDto = await userManagementService.CompleteOnboardingAsync(userId);
+        if (userDto == null) return NotFound();
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-            return NotFound();
-
-        user.OnboardingCompleted = true;
-        await _userManager.UpdateAsync(user);
-
-        var roles = await _userManager.GetRolesAsync(user);
-        var role = roles.Contains("Admin") ? "admin"
-                 : roles.Contains("Moderator") ? "moderator"
-                 : "user";
-
-        return Ok(user.ToUserDTO(role));
+        return Ok(userDto);
     }
 
     [HttpGet("me")]
     [Authorize]
     public async Task<IActionResult> Me()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                  ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
 
-        if (userId == null)
-            return Unauthorized();
+        var userDto = await userManagementService.GetCurrentUserAsync(userId);
+        if (userDto == null) return NotFound();
 
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null)
-            return NotFound();
-
-        var roles = await _userManager.GetRolesAsync(user);
-        var role = roles.Contains("Admin") ? "admin"
-                 : roles.Contains("Moderator") ? "moderator"
-                 : "user";
-
-        return Ok(user.ToUserDTO(role));
+        return Ok(userDto);
     }
+
+    private string? GetUserId()
+        => User.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
 }

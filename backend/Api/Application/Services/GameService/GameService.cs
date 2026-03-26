@@ -2,16 +2,15 @@ using Api.Application.DTOs;
 using Api.Application.Mapper;
 using Api.Application.Repositories;
 using Api.Domain.Entities;
-using Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Api.Application.Services.GameService;
 
 public class GameService(
-    InnovationsprojektDbContext db,
-    UserManager<ApplicationUser> userManager,
-    IPhishingAttemptRepository phishingAttemptRepository) : IGameService
+    IGameModuleRepository gameModuleRepository,
+    ISaveGameRepository saveGameRepository,
+    IPhishingAttemptRepository phishingAttemptRepository,
+    UserManager<ApplicationUser> userManager) : IGameService
 {
     // ── Manifest ──────────────────────────────────────────────────────────────
 
@@ -25,8 +24,7 @@ public class GameService(
 
         // Decision logic: for MVP only one game type exists.
         // Future: inspect attempt.Template.Tags and user.ExpLvl to pick the most effective variant.
-        var gameModule = await db.GameModules
-            .FirstOrDefaultAsync(m => m.Type == ModuleType.PhishingDetective);
+        var gameModule = await gameModuleRepository.FindByTypeAsync(ModuleType.PhishingDetective);
         if (gameModule == null) return null;
 
         return new GameManifestResponseDTO
@@ -78,7 +76,7 @@ public class GameService(
 
         // Mark attempt remediated
         attempt.Status = PhishingStatus.Remediated;
-        db.PhishingAttempts.Update(attempt);
+        await phishingAttemptRepository.UpdateAsync(attempt);
 
         // Persist SaveGame record
         var saveGame = new SaveGame
@@ -90,10 +88,7 @@ public class GameService(
             DifficultyLevel = attempt.Template.DifficultyScore,
             StateData       = dto.StateData.HasValue ? dto.StateData.Value.GetRawText() : null
         };
-        await db.SaveGames.AddAsync(saveGame);
-
-        // Single SaveChangesAsync — atomically flushes attempt status update + new SaveGame row
-        await db.SaveChangesAsync();
+        await saveGameRepository.AddAsync(saveGame);
 
         return saveGame.ToSaveGameResponseDTO(user, xpAwarded);
     }

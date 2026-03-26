@@ -15,6 +15,8 @@ public class MailgunService(HttpClient httpClient, IConfiguration configuration)
     private readonly string _fromEmail = Environment.GetEnvironmentVariable("MAILGUN_FROM_EMAIL")
         ?? configuration["MAILGUN_FROM_EMAIL"]
         ?? throw new InvalidOperationException("MAILGUN_FROM_EMAIL is not configured");
+        // instead of hardcoding the from email, we can also consider making it dynamic based on the template or sender name
+        // any ...@{_domain} email should work 
 
     public async Task SendPhishingEmailAsync(
         string targetEmail,

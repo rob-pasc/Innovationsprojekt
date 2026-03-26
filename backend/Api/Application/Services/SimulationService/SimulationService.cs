@@ -1,16 +1,16 @@
 using Api.Application.DTOs;
+using Api.Application.Repositories;
 using Api.Application.Services.MailgunService;
 using Api.Application.Services.TrackingLinkService;
 using Api.Domain.Entities;
-using Api.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 
 namespace Api.Application.Services.SimulationService;
 
 public class SimulationService(
-    InnovationsprojektDbContext db,
+    IEmailTemplateRepository emailTemplateRepository,
+    IPhishingAttemptRepository phishingAttemptRepository,
     UserManager<ApplicationUser> userManager,
     IMailgunService mailgunService,
     ITrackingLinkService trackingLinkService) : ISimulationService
@@ -19,8 +19,7 @@ public class SimulationService(
         SendSimulationRequestDTO request,
         CancellationToken cancellationToken = default)
     {
-        var template = await db.EmailTemplates
-            .FirstOrDefaultAsync(t => t.Id == request.TemplateId, cancellationToken);
+        var template = await emailTemplateRepository.FindByIdAsync(request.TemplateId, cancellationToken);
 
         if (template == null)
         {
@@ -61,8 +60,7 @@ public class SimulationService(
             Status = PhishingStatus.Pending
         };
 
-        await db.PhishingAttempts.AddAsync(attempt, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
+        await phishingAttemptRepository.AddAsync(attempt, cancellationToken);
 
         await mailgunService.SendPhishingEmailAsync(
             request.TargetEmail,
@@ -73,7 +71,7 @@ public class SimulationService(
 
         attempt.Status = PhishingStatus.Sent;
         attempt.SentAt = DateTime.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
+        await phishingAttemptRepository.UpdateAsync(attempt, cancellationToken);
 
         return new SendSimulationResult
         {

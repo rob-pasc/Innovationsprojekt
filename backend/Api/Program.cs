@@ -11,6 +11,7 @@ using Api.Application.Services.AuthService;
 using Api.Application.Services.RecoveryService;
 using Api.Application.Services.GameService;
 using Api.Application.Services.MailgunService;
+using Api.Application.Services.PhishingTrackingService;
 using Api.Application.Services.SimulationService;
 using Api.Application.Services.TrackingLinkService;
 using Api.Domain.Entities;
@@ -128,12 +129,17 @@ builder.Services.AddAuthorization();
 // Add Custom Services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IRecoveryService, RecoveryService>();
 builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<ISimulationService, SimulationService>();
+builder.Services.AddScoped<IPhishingTrackingService, PhishingTrackingService>();
 builder.Services.AddScoped<ITrackingLinkService, TrackingLinkService>();
 builder.Services.AddHttpClient<IMailgunService, MailgunService>();
 builder.Services.AddScoped<IPhishingAttemptRepository, PhishingAttemptRepository>();
+builder.Services.AddScoped<IEmailTemplateRepository, EmailTemplateRepository>();
+builder.Services.AddScoped<IGameModuleRepository, GameModuleRepository>();
+builder.Services.AddScoped<ISaveGameRepository, SaveGameRepository>();
 
 Console.WriteLine("✓ Registered custom services (ITokenService, IAuthService)");
 
