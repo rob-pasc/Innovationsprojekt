@@ -1,0 +1,29 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.15" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:0" />
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="90" fill="url(#glow)" />
+
+  <path d="M100 45 L140 58 V95 C140 125 120 150 100 160 C80 150 60 125 60 95 V58 L100 45Z" 
+        fill="#10B981" 
+        stroke="#059669" 
+        stroke-width="2"/>
+  
+  <path d="M100 60 L125 70 V95 C125 115 115 135 100 142 C85 135 75 115 75 95 V70 L100 60Z" 
+        fill="white" 
+        opacity="0.2"/>
+
+  <rect x="150" y="50" width="14" height="14" fill="#3B82F6" rx="2">
+    <animate attributeName="y" values="50;45;50" dur="4s" repeatCount="indefinite" />
+  </rect>
+  <rect x="40" y="80" width="10" height="10" fill="#F59E0B" rx="2" />
+  <rect x="160" y="110" width="8" height="8" fill="#10B981" rx="1.5" opacity="0.7" />
+  <rect x="35" y="40" width="12" height="12" fill="#3B82F6" rx="2" opacity="0.5" />
+  
+  <path d="M155 80 L159 90 L168 94 L159 98 L155 108 L151 98 L142 94 L151 90 Z" fill="#F59E0B">
+     <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+  </path>
+</svg>
