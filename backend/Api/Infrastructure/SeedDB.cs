@@ -150,8 +150,8 @@ public static class SeedDB
                 TemplateId    = DevTemplateId,
                 TrackingToken = DevTrackingToken,
                 SentAt        = DateTime.UtcNow,
-                ClickedAt     = DateTime.UtcNow,   // already "clicked" — TrackController not yet wired
-                Status        = PhishingStatus.Clicked
+                ClickedAt     = null,   // already "clicked" — TrackController not yet wired
+                Status        = PhishingStatus.Sent
             });
 
             await db.SaveChangesAsync();
