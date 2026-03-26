@@ -21,7 +21,7 @@ export default function Footer() {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
                 🔍
               </div>
-              <span className="font-bold text-foreground">MediaShield</span>
+              <span className="font-bold text-foreground">Innovationsprojekt</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Learn to identify AI-generated content and phishing attacks.

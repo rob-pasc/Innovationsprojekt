@@ -37,7 +37,7 @@ export default function Header() {
               🔍
             </div>
             <span className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-              MediaShield
+              Innovationsprojekt
             </span>
           </Link>
 

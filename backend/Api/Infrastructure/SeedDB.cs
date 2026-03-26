@@ -97,6 +97,37 @@ public static class SeedDB
             }
         }
 
+        // ── Victim user ─────────────────────────────────────────────────────────
+        var victimEmail = "phishing.victim26@gmail.com";
+        var victimUser = await userManager.FindByEmailAsync(victimEmail);
+
+        if (victimUser == null)
+        {
+            victimUser = new ApplicationUser
+            {
+                UserName = "Default_Victim",
+                Email = victimEmail,
+                EmailConfirmed = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                TotalPoints = 0,
+                ExpLvl = 1,
+                OnboardingCompleted = false
+            };
+
+            // B6 (known issue): same hardcoded-credential issue as admin above.
+            var result = await userManager.CreateAsync(victimUser, "victimPassword123!");
+            if (result.Succeeded)
+            {
+                await userManager.AddToRoleAsync(victimUser, "User");
+                Console.WriteLine($"✓ Created victim user: {victimEmail}");
+            }
+            else
+            {
+                Console.WriteLine($"✗ Failed to create victim user: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+            }
+        }
+
         // ── Dev GameModule ─────────────────────────────────────────────────────
         // One module per game type; new types are added here as the platform grows.
         if (await db.GameModules.FindAsync(DevGameModuleId) == null)
