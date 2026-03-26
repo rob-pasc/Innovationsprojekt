@@ -7,7 +7,8 @@ public enum SendSimulationError
     None,
     TemplateNotFound,
     UserNotFound,
-    UnsupportedTemplateSlug
+    UnsupportedTemplateSlug,
+    EmailDeliveryFailed
 }
 
 public record SendSimulationResult

@@ -64,6 +64,15 @@ export const authAPI = {
     getApiClient().post('/auth/complete-onboarding'),
 };
 
+// Simulation endpoints (Admin only)
+export const simulationAPI = {
+  getTemplates: () =>
+    getApiClient().get('/simulations/templates'),
+
+  sendSimulation: (targetEmail: string, templateId: string) =>
+    getApiClient().post('/simulations/send', { targetEmail, templateId }),
+};
+
 // Recovery/Investigation endpoints
 export const recoveryAPI = {
   getRecoveryData: (token: string) =>

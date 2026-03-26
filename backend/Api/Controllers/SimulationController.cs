@@ -10,6 +10,12 @@ namespace Api.Controllers;
 [Authorize(Roles = "Admin")]
 public class SimulationController(ISimulationService simulationService) : ControllerBase
 {
+    [HttpGet("templates")]
+    [ProducesResponseType<List<EmailTemplateSummaryDTO>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<EmailTemplateSummaryDTO>>> GetTemplates(
+        CancellationToken cancellationToken)
+        => Ok(await simulationService.GetTemplatesAsync(cancellationToken));
+
     [HttpPost("send")]
     [ProducesResponseType<SendSimulationResponseDTO>(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -42,6 +48,12 @@ public class SimulationController(ISimulationService simulationService) : Contro
                 Title = "Unsupported template slug",
                 Detail = result.ErrorMessage,
                 Status = StatusCodes.Status400BadRequest
+            }),
+            SendSimulationError.EmailDeliveryFailed => StatusCode(StatusCodes.Status502BadGateway, new ProblemDetails
+            {
+                Title = "Email delivery failed",
+                Detail = result.ErrorMessage,
+                Status = StatusCodes.Status502BadGateway
             }),
             _ => BadRequest(new ProblemDetails
             {

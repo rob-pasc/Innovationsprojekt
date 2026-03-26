@@ -62,12 +62,23 @@ public class SimulationService(
 
         await phishingAttemptRepository.AddAsync(attempt, cancellationToken);
 
-        await mailgunService.SendPhishingEmailAsync(
-            request.TargetEmail,
-            template.Subject,
-            emailBody,
-            template.SenderName,
-            cancellationToken);
+        try
+        {
+            await mailgunService.SendPhishingEmailAsync(
+                request.TargetEmail,
+                template.Subject,
+                emailBody,
+                template.SenderName,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return new SendSimulationResult
+            {
+                Error = SendSimulationError.EmailDeliveryFailed,
+                ErrorMessage = $"Email delivery failed: {ex.Message}"
+            };
+        }
 
         attempt.Status = PhishingStatus.Sent;
         attempt.SentAt = DateTime.UtcNow;
@@ -91,6 +102,20 @@ public class SimulationService(
                 Message = "Simulation email sent successfully."
             }
         };
+    }
+
+    public async Task<List<EmailTemplateSummaryDTO>> GetTemplatesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var templates = await emailTemplateRepository.GetAllAsync(cancellationToken);
+        return templates.Select(t => new EmailTemplateSummaryDTO
+        {
+            Id = t.Id,
+            Name = t.Name,
+            Subject = t.Subject,
+            SenderName = t.SenderName,
+            DifficultyScore = t.DifficultyScore
+        }).ToList();
     }
 
     private static string GenerateTrackingToken()

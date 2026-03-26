@@ -7,4 +7,7 @@ public interface ISimulationService
     Task<SendSimulationResult> SendSimulationAsync(
         SendSimulationRequestDTO request,
         CancellationToken cancellationToken = default);
+
+    Task<List<EmailTemplateSummaryDTO>> GetTemplatesAsync(
+        CancellationToken cancellationToken = default);
 }

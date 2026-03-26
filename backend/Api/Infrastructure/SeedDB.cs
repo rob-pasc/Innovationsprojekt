@@ -10,6 +10,8 @@ public static class SeedDB
     // ── Known dev constants ────────────────────────────────────────────────────
     // Fixed GUIDs so re-runs never create duplicates and the token is easy to type.
     private static readonly Guid DevTemplateId    = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+    private static readonly Guid DevTemplate2Id   = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
+    private static readonly Guid DevTemplate3Id   = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000003");
     private static readonly Guid DevAttemptId     = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
     private static readonly Guid DevGameModuleId  = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
     public  const string DevTrackingToken         = "dev-phishing-test-001";
@@ -132,6 +134,56 @@ public static class SeedDB
 
             await db.SaveChangesAsync();
             Console.WriteLine($"✓ Seeded dev EmailTemplate: \"HR Password Reset\" (id={DevTemplateId})");
+        }
+
+        // ── Dev EmailTemplate 2 — Pending Invoice ─────────────────────────────
+        if (await db.EmailTemplates.FindAsync(DevTemplate2Id) == null)
+        {
+            db.EmailTemplates.Add(new EmailTemplate
+            {
+                Id            = DevTemplate2Id,
+                Name          = "Pending Invoice",
+                Subject       = "Invoice #INV-2024-0391 requires your action",
+                SenderName    = "Accounts Payable",
+                Slug          = "view-document",
+                BodyHtml      = "<p>Dear Colleague,</p>"
+                              + "<p>Please be advised that invoice <strong>#INV-2024-0391</strong> "
+                              + "for <strong>€3,450.00</strong> is awaiting your approval. "
+                              + "Payment will be processed automatically within 24 hours if no action is taken.</p>"
+                              + "<p><a href='#'>View & Approve Invoice</a></p>"
+                              + "<p>If you have any questions, contact accounts-payable@company.internal.</p>"
+                              + "<p>Best regards,<br>Accounts Payable Department</p>",
+                Tags          = ["urgency", "financial_lure"],
+                DifficultyScore = 2
+            });
+
+            await db.SaveChangesAsync();
+            Console.WriteLine($"✓ Seeded dev EmailTemplate: \"Pending Invoice\" (id={DevTemplate2Id})");
+        }
+
+        // ── Dev EmailTemplate 3 — Account Security Alert ──────────────────────
+        if (await db.EmailTemplates.FindAsync(DevTemplate3Id) == null)
+        {
+            db.EmailTemplates.Add(new EmailTemplate
+            {
+                Id            = DevTemplate3Id,
+                Name          = "Account Security Alert",
+                Subject       = "Action required: Verify your account to prevent suspension",
+                SenderName    = "Security Team",
+                Slug          = "account-verify",
+                BodyHtml      = "<p>Dear User,</p>"
+                              + "<p>Our security systems have detected <strong>unusual sign-in activity</strong> "
+                              + "on your account. To protect your data, your account will be <strong>suspended within 2 hours</strong> "
+                              + "unless you verify your identity immediately.</p>"
+                              + "<p><a href='#'>Verify My Account Now</a></p>"
+                              + "<p>If you do not verify, you will lose access to all company services.</p>"
+                              + "<p>Do not reply to this email.<br>Security Team</p>",
+                Tags          = ["urgency", "fear_appeal", "spoofed_sender"],
+                DifficultyScore = 4
+            });
+
+            await db.SaveChangesAsync();
+            Console.WriteLine($"✓ Seeded dev EmailTemplate: \"Account Security Alert\" (id={DevTemplate3Id})");
         }
 
         // ── Dev PhishingAttempt ────────────────────────────────────────────────

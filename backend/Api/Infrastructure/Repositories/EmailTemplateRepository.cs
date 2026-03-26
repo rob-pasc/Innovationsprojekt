@@ -12,4 +12,7 @@ public class EmailTemplateRepository(InnovationsprojektDbContext db)
 
     public Task<EmailTemplate?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => _db.EmailTemplates.FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+    public Task<List<EmailTemplate>> GetAllAsync(CancellationToken cancellationToken = default)
+        => _db.EmailTemplates.ToListAsync(cancellationToken);
 }
