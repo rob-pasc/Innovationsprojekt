@@ -18,6 +18,7 @@ using Api.Domain.Entities;
 using Api.Infrastructure;
 using Api.Infrastructure.Persistence;
 using Api.Infrastructure.Repositories;
+using Api.Application.Hubs;
 
 // ────────────────────────────────────────────────────────────────────────────
 // 1. LOAD ENVIRONMENT VARIABLES
@@ -74,6 +75,9 @@ builder.Services.AddDbContext<InnovationsprojektDbContext>(options =>
     options.UseNpgsql(connectionString)
 );
 Console.WriteLine("✓ Configured DbContext with PostgreSQL");
+
+// Add SignalR
+builder.Services.AddSignalR();
 
 // Add ASP.NET Core Identity with Role Support
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -186,6 +190,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<SimulationHub>("/hubs/simulation");
 
 Console.WriteLine("✓ Configured middleware pipeline");
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
 import { useAuthStore } from '@/store/useAuthStore';
 import { simulationAPI } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import {
   Users,
   BarChart2,
   FileText,
+  Radio,
 } from 'lucide-react';
 
 interface EmailTemplateSummary {
@@ -33,25 +35,35 @@ interface SimulationResult {
   message: string;
 }
 
+interface SimulationClickedEvent {
+  attemptId: string;
+  trackingToken: string;
+  clickedAt: string;
+  status: string;
+  targetEmail?: string;
+  templateName?: string;
+}
+
+const API_BASE_URL = (import.meta.env.VITE_API_URL as string).replace(/\/api$/, '');
+
 export default function AdminDashboard() {
   const { user } = useAuthStore();
 
-  // Template selector state
   const [templates, setTemplates] = useState<EmailTemplateSummary[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(true);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
 
-  // Form state
   const [targetEmail, setTargetEmail] = useState('');
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
 
-  // Send state
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [result, setResult] = useState<SimulationResult | null>(null);
 
-  // Copy-to-clipboard state
   const [copied, setCopied] = useState(false);
+
+  const [liveEvents, setLiveEvents] = useState<SimulationClickedEvent[]>([]);
+  const [signalRStatus, setSignalRStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
   useEffect(() => {
     simulationAPI.getTemplates()
@@ -61,6 +73,43 @@ export default function AdminDashboard() {
       })
       .catch(() => setTemplatesError('Failed to load templates.'))
       .finally(() => setTemplatesLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const connection: HubConnection = new HubConnectionBuilder()
+      .withUrl(`${API_BASE_URL}/hubs/simulation`)
+      .withAutomaticReconnect()
+      .configureLogging(LogLevel.Information)
+      .build();
+
+    connection.on('SimulationClicked', (event: SimulationClickedEvent) => {
+      setLiveEvents((prev) => [event, ...prev].slice(0, 10));
+    });
+
+    connection.onreconnecting(() => {
+      setSignalRStatus('connecting');
+    });
+
+    connection.onreconnected(() => {
+      setSignalRStatus('connected');
+    });
+
+    connection.onclose(() => {
+      setSignalRStatus('disconnected');
+    });
+
+    connection.start()
+      .then(() => setSignalRStatus('connected'))
+      .catch((error) => {
+        console.error('SignalR connection failed:', error);
+        setSignalRStatus('disconnected');
+      });
+
+    return () => {
+      connection.stop().catch((error) => {
+        console.error('SignalR disconnect failed:', error);
+      });
+    };
   }, []);
 
   async function handleSend(e: React.FormEvent) {
@@ -98,12 +147,21 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs font-semibold px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">
               Admin
+            </span>
+            <span
+              className={`text-xs font-medium px-2 py-0.5 rounded border ${
+                signalRStatus === 'connected'
+                  ? 'bg-primary/10 text-primary border-primary/20'
+                  : signalRStatus === 'connecting'
+                  ? 'bg-muted text-muted-foreground border-border'
+                  : 'bg-destructive/10 text-destructive border-destructive/20'
+              }`}
+            >
+              Live updates: {signalRStatus}
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
@@ -113,11 +171,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-
-          {/* Left — Simulation Form */}
           <div className="lg:col-span-2 space-y-6">
-
-            {/* Send Simulation Card */}
             <Card className="p-6 space-y-5">
               <div>
                 <h2 className="text-lg font-bold text-foreground flex items-center gap-2 mb-1">
@@ -130,7 +184,6 @@ export default function AdminDashboard() {
               </div>
 
               <form onSubmit={handleSend} className="space-y-4">
-                {/* Target Email */}
                 <div className="space-y-1.5">
                   <label htmlFor="targetEmail" className="text-sm font-medium text-foreground">
                     Target Email
@@ -146,7 +199,6 @@ export default function AdminDashboard() {
                   />
                 </div>
 
-                {/* Template Selector */}
                 <div className="space-y-1.5">
                   <label htmlFor="template" className="text-sm font-medium text-foreground">
                     Email Template
@@ -176,7 +228,6 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                {/* Template Preview */}
                 {selectedTemplate && (
                   <div className="rounded-md bg-muted/50 border border-border p-3 space-y-1 text-xs text-muted-foreground">
                     <p><span className="font-medium text-foreground">Subject:</span> {selectedTemplate.subject}</p>
@@ -185,7 +236,6 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
-                {/* Send Error */}
                 {sendError && (
                   <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-sm text-destructive">
                     <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -204,7 +254,6 @@ export default function AdminDashboard() {
               </form>
             </Card>
 
-            {/* Result Card */}
             {result && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -237,7 +286,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  {/* Tracking Link */}
                   <div className="space-y-1.5">
                     <p className="text-xs font-medium text-muted-foreground">Tracking Link</p>
                     <div className="flex items-center gap-2">
@@ -261,8 +309,42 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* Right — Coming Soon Cards */}
           <div className="space-y-4">
+            <Card className="p-5 space-y-4">
+              <div className="flex items-center gap-2">
+                <Radio className="w-5 h-5" />
+                <h3 className="font-semibold text-foreground">Live Click Events</h3>
+              </div>
+
+              {liveEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No live click events yet. Open a tracking link to test SignalR.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {liveEvents.map((event) => (
+                    <div
+                      key={`${event.attemptId}-${event.clickedAt}`}
+                      className="rounded-md border border-border bg-muted/30 p-3 space-y-1"
+                    >
+                      <p className="text-sm font-medium text-foreground">
+                        {event.targetEmail ?? 'Unknown user'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Template: {event.templateName ?? 'Unknown template'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Clicked: {new Date(event.clickedAt).toLocaleTimeString()}
+                      </p>
+                      <p className="text-xs text-muted-foreground break-all">
+                        Token: {event.trackingToken}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
             <ComingSoonCard
               icon={<BarChart2 className="w-5 h-5" />}
               title="Simulation Stats"
