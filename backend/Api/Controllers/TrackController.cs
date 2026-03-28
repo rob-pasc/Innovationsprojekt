@@ -52,7 +52,7 @@ public class TrackController(
                 status = attempt.Status.ToString(),
                 targetEmail = attempt.User?.Email,
                 templateName = attempt.Template?.Name
-            }, cancellationToken);
+            }, CancellationToken.None);
         }
 
         return Redirect($"{_frontendUrl}/alert/{token}");

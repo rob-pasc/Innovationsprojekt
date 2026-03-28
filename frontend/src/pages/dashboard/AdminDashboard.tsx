@@ -77,7 +77,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const connection: HubConnection = new HubConnectionBuilder()
-      .withUrl(`${API_BASE_URL}/hubs/simulation`)
+      .withUrl(`${API_BASE_URL}/hubs/simulation`, {
+        accessTokenFactory: () => useAuthStore.getState().token ?? '',
+      })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Information)
       .build();

@@ -160,9 +160,12 @@ builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", corsBuilder =>
-        corsBuilder.AllowAnyOrigin()
+        corsBuilder.WithOrigins(
+                       Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5173"
+                   )
                    .AllowAnyMethod()
-                   .AllowAnyHeader());
+                   .AllowAnyHeader()
+                   .AllowCredentials());
 });
 
 Console.WriteLine("✓ Configured CORS\n");
