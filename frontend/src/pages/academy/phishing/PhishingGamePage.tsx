@@ -6,45 +6,41 @@ import type React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/store/useGameStore';
-import PhishingDetectiveGame from './components/PhishingDetectiveGame';
+import type { GameResult } from '@/store/useGameStore';
+import PhishingEmailQuizGame from './components/PhishingEmailQuizGame';
 import GameSelectionScreen from './components/GameSelectionScreen';
-import DetectiveStoryGame from './components/DetectiveStoryGame';
+import PhishingForensicsGame from './components/PhishingForensicsGame';
 import { selectQuestionsForTags } from './data/questions';
 import type { GameQuestion } from './data/questions';
 
 // ── Game Registry ─────────────────────────────────────────────────────────────
-// Maps gameType strings returned by the manifest endpoint to concrete components.
-// To add a new game: implement the component and add an entry here.
 
 const GAME_REGISTRY: Record<string, React.ComponentType<{ questions: GameQuestion[] }>> = {
-  'phishing-detective': PhishingDetectiveGame,
-  // 'deepfake-scanner': DeepfakeGame,  ← plug in future games here
+  'phishing-detective': PhishingEmailQuizGame,
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
-export default function DetectiveGamePage() {
+export default function PhishingGamePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token');
 
   const {
-    phase, manifest, gameResult, error,
+    phase, manifest, error,
     selectedGameMode,
-    initSession, startGame, selectGameMode, submitGameWithRawScore, reset,
+    initSession, startGame, selectGameMode, saveGame, markComplete, reset,
   } = useGameStore();
 
-  // Derive questions from manifest tags once manifest is loaded
   const questions = useMemo(
     () => (manifest ? selectQuestionsForTags(manifest.config.tags, 5) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [manifest?.config.tags.join(',')]
   );
 
-  // Resolve game component from registry (used by quiz mode)
   const GameComponent = manifest ? GAME_REGISTRY[manifest.gameType] : undefined;
 
-  // Ref-based guard — mutations don't trigger re-renders so the timer is never cancelled prematurely
+  // Ref-based guard — prevents the timer firing more than once
   const navigatedRef = useRef(false);
 
   // Init on mount, cleanup on unmount
@@ -55,12 +51,9 @@ export default function DetectiveGamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  // Navigate to dashboard 3 s after phase becomes 'complete'.
-  // Using a ref (not state) so that subsequent store updates (e.g. gameResult
-  // changing from placeholder → real API data) don't re-run the effect and
-  // cancel the timer via cleanup.
+  // Navigate to dashboard 3 s after phase becomes 'submitted'
   useEffect(() => {
-    if (phase !== 'complete' || navigatedRef.current) return;
+    if (phase !== 'submitted' || navigatedRef.current) return;
     navigatedRef.current = true;
     const t = setTimeout(() => {
       navigate('/dashboard', { state: { levelUp: useGameStore.getState().gameResult } });
@@ -68,11 +61,20 @@ export default function DetectiveGamePage() {
     return () => clearTimeout(t);
   }, [phase, navigate]);
 
-  // Called when DetectiveStoryGame completes — submits the raw 0-100 score
-  const handleStoryComplete = (score: number) => {
-    submitGameWithRawScore(score);
+  // ── Forensics handlers ────────────────────────────────────────────────────
+  // Called by PhishingForensicsGame when the user submits their verdict.
+  // Makes the API call and returns the real result so the game can show
+  // the exact backend-calculated XP in its modal.
+  const handleForensicsSubmit = async (score: number, stateData: object): Promise<GameResult> => {
+    const result = await saveGame(score, stateData);
+    // saveGame only returns null on error; the game component handles that via store.error
+    return result!;
   };
 
+  // Called when the user clicks "Weiter →" in the forensics result modal.
+  const handleForensicsComplete = () => {
+    markComplete();
+  };
 
   // ── No token ────────────────────────────────────────────────────────────────
   if (!token) {
@@ -131,7 +133,6 @@ export default function DetectiveGamePage() {
           className="w-full max-w-lg"
         >
           <Card className="p-8 space-y-6">
-            {/* Header */}
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">
                 <ShieldAlert className="w-6 h-6 text-primary" />
@@ -142,7 +143,6 @@ export default function DetectiveGamePage() {
               </div>
             </div>
 
-            {/* What happened */}
             <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4 space-y-2">
               <p className="text-xs font-semibold text-destructive uppercase tracking-wide">
                 You fell for
@@ -150,7 +150,6 @@ export default function DetectiveGamePage() {
               <p className="text-sm font-medium text-foreground">{config.templateName}</p>
             </div>
 
-            {/* Tags */}
             <div className="space-y-2">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 Red flags in that email
@@ -167,7 +166,6 @@ export default function DetectiveGamePage() {
               </div>
             </div>
 
-            {/* Stats row */}
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="bg-muted rounded-lg p-3">
                 <p className="text-lg font-bold text-foreground">
@@ -181,7 +179,6 @@ export default function DetectiveGamePage() {
               </div>
             </div>
 
-            {/* Instructions */}
             <p className="text-sm text-muted-foreground text-center">
               Choose a training mode on the next screen to earn back your points.
             </p>
@@ -200,20 +197,26 @@ export default function DetectiveGamePage() {
     return <GameSelectionScreen onSelect={selectGameMode} />;
   }
 
-  // ── Playing / Feedback / Complete ───────────────────────────────────────────
-  return (
-    <div className={selectedGameMode === 'detective-story' ? '' : 'min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8'}>
-      {phase === 'complete' && gameResult && (
+  // ── Submitted — awaiting redirect ────────────────────────────────────────────
+  if (phase === 'submitted') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center text-sm text-muted-foreground mb-6"
+          className="text-center text-sm text-muted-foreground"
         >
           Redirecting to dashboard in a moment…
         </motion.p>
-      )}
-      {selectedGameMode === 'detective-story'
-        ? <DetectiveStoryGame onComplete={handleStoryComplete} />
+      </div>
+    );
+  }
+
+  // ── Playing / Feedback / Complete ───────────────────────────────────────────
+  return (
+    <div className={selectedGameMode === 'phishing-forensics' ? '' : 'min-h-screen bg-gradient-to-br from-background via-background to-primary/5 py-8'}>
+      {selectedGameMode === 'phishing-forensics'
+        ? <PhishingForensicsGame onSubmit={handleForensicsSubmit} onComplete={handleForensicsComplete} />
         : GameComponent && <GameComponent questions={questions} />
       }
     </div>

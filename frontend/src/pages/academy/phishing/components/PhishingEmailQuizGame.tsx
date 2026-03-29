@@ -1,20 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, XCircle, Trophy, Loader2, Mail } from 'lucide-react';
+import { CheckCircle2, XCircle, Trophy, Loader2, Mail, Zap } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/store/useGameStore';
+import { usePhishingQuizStore, getPhishingQuizSnapshot } from '@/store/usePhishingQuizStore';
 import type { GameQuestion } from '../data/questions';
 
-interface PhishingDetectiveGameProps {
+interface PhishingEmailQuizGameProps {
   questions: GameQuestion[];
 }
 
-export default function PhishingDetectiveGame({ questions }: PhishingDetectiveGameProps) {
-  const { phase, score, totalRounds, currentRound, answers, isSubmitting, error, recordAnswer, nextRound, submitGame } =
+export default function PhishingEmailQuizGame({ questions }: PhishingEmailQuizGameProps) {
+  const { phase, score, totalRounds, currentRound, answers, isSubmitting, error, gameModuleId, recordAnswer, nextRound, saveGame, markComplete } =
     useGameStore();
 
+  const quizStore = usePhishingQuizStore();
+
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [xpAwarded, setXpAwarded] = useState<number | null>(null);
+
+  // Init or resume the quiz store for this session
+  useEffect(() => {
+    if (!gameModuleId) return;
+    if (quizStore.gameModuleId === gameModuleId) return; // resume existing session
+    quizStore.initGame(gameModuleId, totalRounds);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameModuleId]);
 
   const currentQuestion = questions[currentQuestionIndex];
   const lastAnswer = answers[answers.length - 1]; // true = correct, false = wrong
@@ -23,6 +35,7 @@ export default function PhishingDetectiveGame({ questions }: PhishingDetectiveGa
     if (!currentQuestion) return;
     const wasCorrect = isPhishing === currentQuestion.isPhishing;
     recordAnswer(wasCorrect);
+    quizStore.recordRound(currentRound, currentQuestion.id, isPhishing, wasCorrect);
   };
 
   const handleNext = () => {
@@ -175,6 +188,17 @@ export default function PhishingDetectiveGame({ questions }: PhishingDetectiveGa
   if (phase === 'complete') {
     const percentage = Math.round((score / totalRounds) * 100);
 
+    const handleSubmit = async () => {
+      quizStore.completeGame(percentage);
+      const stateData = getPhishingQuizSnapshot();
+      // API call — XP is calculated exclusively on the backend
+      const result = await saveGame(percentage, stateData);
+      if (!result) return; // error surfaced via store.error
+      setXpAwarded(result.xpAwarded);
+      // Show the real XP for 3 s then navigate
+      setTimeout(() => markComplete(), 3000);
+    };
+
     return (
       <div className="max-w-md mx-auto px-4">
         <motion.div
@@ -219,21 +243,33 @@ export default function PhishingDetectiveGame({ questions }: PhishingDetectiveGa
               <p className="text-sm text-destructive">{error}</p>
             )}
 
-            <Button
-              className="w-full"
-              size="lg"
-              onClick={submitGame}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                '⚡ Submit & Earn XP'
-              )}
-            </Button>
+            {/* After API responds: show real XP and auto-redirect message */}
+            {xpAwarded !== null ? (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-center gap-2 text-primary font-bold text-lg"
+              >
+                <Zap className="w-5 h-5" />
+                +{xpAwarded} XP earned!
+              </motion.div>
+            ) : (
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  '⚡ Submit & Earn XP'
+                )}
+              </Button>
+            )}
           </Card>
         </motion.div>
       </div>

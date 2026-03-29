@@ -10,11 +10,13 @@ public record GameConfigDTO
     public int DifficultyScore { get; init; }
     public int UserLevel { get; init; }
     public string TemplateName { get; init; } = string.Empty;
+    public Guid QuizModuleId { get; init; }       // GameModule id for PhishingEmailQuiz mode
+    public Guid ForensicsModuleId { get; init; }  // GameModule id for PhishingEmailForensics mode
 }
 
 public record GameManifestResponseDTO
 {
-    public Guid GameModuleId { get; init; }
+    // GameModuleId removed — each mode now carries its own id inside Config
     public string GameType { get; init; } = string.Empty;   // e.g. "phishing-detective"
     public string Version { get; init; } = "1.0";
     public GameConfigDTO Config { get; init; } = new();

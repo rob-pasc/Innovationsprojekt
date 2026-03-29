@@ -56,7 +56,7 @@ export default function AlertPage() {
   const handleStartTraining = () => {
     setIsLoading(true);
     // Navigate to the phishing detective game with the token
-    navigate(`/academy/phishing/detective-game?token=${token}`);
+    navigate(`/academy/phishing/game?token=${token}`);
   };
 
   return (

@@ -7,7 +7,7 @@ import OnboardingPage from '@/pages/auth/OnboardingPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import AlertPage from '@/pages/alert/AlertPage';
 import InvestigationPage from '@/pages/investigation/InvestigationPage';
-import DetectiveGamePage from '@/pages/academy/phishing/DetectiveGamePage';
+import PhishingGamePage from '@/pages/academy/phishing/PhishingGamePage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import ProtectedRoute from '@/components/routing/ProtectedRoute';
 
@@ -69,10 +69,10 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'academy/phishing/detective-game',
+        path: 'academy/phishing/game',
         element: (
           <ProtectedRoute>
-            <DetectiveGamePage />
+            <PhishingGamePage />
           </ProtectedRoute>
         ),
       },

@@ -13,7 +13,8 @@ public static class SeedDB
     private static readonly Guid DevTemplate2Id   = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000002");
     private static readonly Guid DevTemplate3Id   = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000003");
     private static readonly Guid DevAttemptId     = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
-    private static readonly Guid DevGameModuleId  = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+    private static readonly Guid DevQuizModuleId      = Guid.Parse("cccccccc-0000-0000-0000-000000000001");
+    private static readonly Guid DevForensicsModuleId = Guid.Parse("cccccccc-0000-0000-0000-000000000002");
     public  const string DevTrackingToken         = "dev-phishing-test-001";
 
     public static async Task Initialize(
@@ -128,19 +129,30 @@ public static class SeedDB
             }
         }
 
-        // ── Dev GameModule ─────────────────────────────────────────────────────
-        // One module per game type; new types are added here as the platform grows.
-        if (await db.GameModules.FindAsync(DevGameModuleId) == null)
+        // ── Dev GameModules ────────────────────────────────────────────────────
+        // One module per game mode; new modes are added here as the platform grows.
+        if (await db.GameModules.FindAsync(DevQuizModuleId) == null)
         {
             db.GameModules.Add(new GameModule
             {
-                Id    = DevGameModuleId,
-                Type  = ModuleType.PhishingDetective,
+                Id    = DevQuizModuleId,
+                Type  = ModuleType.PhishingEmailQuiz,
                 Paths = null
             });
-
             await db.SaveChangesAsync();
-            Console.WriteLine($"✓ Seeded dev GameModule: PhishingDetective (id={DevGameModuleId})");
+            Console.WriteLine($"✓ Seeded dev GameModule: PhishingEmailQuiz (id={DevQuizModuleId})");
+        }
+
+        if (await db.GameModules.FindAsync(DevForensicsModuleId) == null)
+        {
+            db.GameModules.Add(new GameModule
+            {
+                Id    = DevForensicsModuleId,
+                Type  = ModuleType.PhishingEmailForensics,
+                Paths = null
+            });
+            await db.SaveChangesAsync();
+            Console.WriteLine($"✓ Seeded dev GameModule: PhishingEmailForensics (id={DevForensicsModuleId})");
         }
 
         // ── Dev EmailTemplate ──────────────────────────────────────────────────
@@ -240,7 +252,7 @@ public static class SeedDB
             await db.SaveChangesAsync();
             Console.WriteLine($"✓ Seeded dev PhishingAttempt: token = \"{DevTrackingToken}\"");
             Console.WriteLine($"  → AlertPage:  /alert/{DevTrackingToken}");
-            Console.WriteLine($"  → Game:       /academy/phishing/detective-game?token={DevTrackingToken}");
+            Console.WriteLine($"  → Game:       /academy/phishing/game?token={DevTrackingToken}");
         }
     }
 }

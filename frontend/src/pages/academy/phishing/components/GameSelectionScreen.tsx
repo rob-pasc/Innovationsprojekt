@@ -3,7 +3,7 @@ import { Clock, Zap, Mail, Search } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
-type GameMode = 'quiz' | 'detective-story';
+type GameMode = 'phishing-email-quiz' | 'phishing-forensics';
 
 interface GameOption {
   mode: GameMode;
@@ -17,7 +17,7 @@ interface GameOption {
 
 const GAME_OPTIONS: GameOption[] = [
   {
-    mode: 'quiz',
+    mode: 'phishing-email-quiz',
     icon: <Mail className="w-6 h-6 text-primary" />,
     title: 'Email Detective Quiz',
     description:
@@ -27,7 +27,7 @@ const GAME_OPTIONS: GameOption[] = [
     tags: ['Quick', 'Multiple choice'],
   },
   {
-    mode: 'detective-story',
+    mode: 'phishing-forensics',
     icon: <Search className="w-6 h-6 text-primary" />,
     title: 'Email Forensics Lab',
     description:

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -109,6 +109,13 @@ export default function UserDashboard() {
   const levelUpResult = location.state?.levelUp as SaveGameResult | undefined;
   const [showLevelUp, setShowLevelUp] = useState(!!levelUpResult);
 
+  // Auto-dismiss the banner after 3 seconds
+  useEffect(() => {
+    if (!showLevelUp) return;
+    const t = setTimeout(() => setShowLevelUp(false), 3000);
+    return () => clearTimeout(t);
+  }, [showLevelUp]);
+
   if (!user) return null;
 
   // Filter games by category if selected
@@ -125,9 +132,10 @@ export default function UserDashboard() {
       {/* ── Level-Up Banner ── shown after completing a recovery training session */}
       {showLevelUp && levelUpResult && (
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed top-4 right-4 z-50 max-w-sm w-full"
+          exit={{ opacity: 0, y: -8 }}
+          className="fixed top-20 right-4 z-40 max-w-sm w-full"
         >
           <Card className="p-4 border-primary bg-primary/10 shadow-lg">
             <div className="flex items-start gap-3">

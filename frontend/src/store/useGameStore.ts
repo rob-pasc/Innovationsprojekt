@@ -8,16 +8,17 @@ interface GameConfig {
   difficultyScore: number;
   userLevel: number;
   templateName: string;
+  quizModuleId: string;      // GameModule id for PhishingEmailQuiz mode
+  forensicsModuleId: string; // GameModule id for PhishingEmailForensics mode
 }
 
 interface GameManifest {
-  gameModuleId: string;
   gameType: string;
   version: string;
   config: GameConfig;
 }
 
-interface GameResult {
+export interface GameResult {
   xpAwarded: number;
   totalPoints: number;
   expLvl: number;
@@ -25,8 +26,10 @@ interface GameResult {
   message: string;
 }
 
-type GamePhase = 'loading' | 'briefing' | 'selection' | 'playing' | 'feedback' | 'complete';
-type GameMode = 'quiz' | 'detective-story';
+// 'complete'  — game logic done, awaiting submission (quiz results screen)
+// 'submitted' — API call succeeded, navigating to dashboard
+type GamePhase = 'loading' | 'briefing' | 'selection' | 'playing' | 'feedback' | 'complete' | 'submitted';
+type GameMode = 'phishing-email-quiz' | 'phishing-forensics';
 
 interface GameStore {
   // Session data
@@ -46,7 +49,7 @@ interface GameStore {
   isSubmitting: boolean;
   error: string | null;
 
-  // Result (populated after PUT /api/games/savegame)
+  // Result — populated after saveGame() succeeds
   gameResult: GameResult | null;
 
   // Actions
@@ -55,8 +58,12 @@ interface GameStore {
   selectGameMode: (mode: GameMode) => void;
   recordAnswer: (wasCorrect: boolean) => void;
   nextRound: () => void;
-  submitGame: () => Promise<void>;
-  submitGameWithRawScore: (rawScore: number) => Promise<void>;
+  // Single submission action used by both game modes.
+  // Makes the API call, stores the result, flushes module stores.
+  // Does NOT change phase — caller decides when to transition.
+  saveGame: (rawScore: number, stateData?: object) => Promise<GameResult | null>;
+  // Transitions to 'submitted', triggering the dashboard redirect.
+  markComplete: () => void;
   reset: () => void;
 }
 
@@ -78,7 +85,7 @@ const INITIAL_STATE = {
 };
 
 // ── Store ─────────────────────────────────────────────────────────────────────
-// No `persist` middleware — game state is intentionally ephemeral.
+// No `persist` middleware — game session state is intentionally ephemeral.
 
 export const useGameStore = create<GameStore>()((set, get) => ({
   ...INITIAL_STATE,
@@ -88,7 +95,7 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     try {
       const { recoveryAPI } = await import('@/lib/api');
       const response = await recoveryAPI.getGameManifest(token);
-      set({ manifest: response.data, gameModuleId: response.data.gameModuleId, phase: 'briefing' });
+      set({ manifest: response.data, phase: 'briefing' });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to load game data.';
       set({ error: message, phase: 'loading' });
@@ -100,7 +107,11 @@ export const useGameStore = create<GameStore>()((set, get) => ({
   },
 
   selectGameMode: (mode: GameMode) => {
-    set({ selectedGameMode: mode, phase: 'playing' });
+    const { manifest } = get();
+    const gameModuleId = mode === 'phishing-email-quiz'
+      ? manifest?.config.quizModuleId
+      : manifest?.config.forensicsModuleId;
+    set({ selectedGameMode: mode, gameModuleId: gameModuleId ?? null, phase: 'playing' });
   },
 
   recordAnswer: (wasCorrect: boolean) => {
@@ -121,52 +132,39 @@ export const useGameStore = create<GameStore>()((set, get) => ({
     });
   },
 
-  submitGame: async () => {
-    const { token, gameModuleId, score, totalRounds } = get();
-    if (!token || !gameModuleId) return;
+  saveGame: async (rawScore: number, stateData?: object) => {
+    const { token, gameModuleId } = get();
+    if (!token || !gameModuleId) return null;
 
     set({ isSubmitting: true, error: null });
     try {
-      const finalScore = Math.round((score / totalRounds) * 100);
       const { recoveryAPI } = await import('@/lib/api');
-      const response = await recoveryAPI.saveGameProgress(token, finalScore, gameModuleId);
-      set({ gameResult: response.data, isSubmitting: false });
-      // Sync updated XP/level into persisted auth store so dashboard shows fresh values
+      const response = await recoveryAPI.saveGameProgress(token, rawScore, gameModuleId, stateData);
+      const result: GameResult = response.data;
+      set({ gameResult: result, isSubmitting: false });
+
+      // Sync XP/level into the persisted auth store so the dashboard is up to date
       useAuthStore.getState().updateUser({
-        totalPoints: response.data.totalPoints,
-        expLvl: response.data.expLvl,
+        totalPoints: result.totalPoints,
+        expLvl: result.expLvl,
       });
+
+      // Data is safely in the DB — flush both module stores from sessionStorage
+      const { usePhishingForensicsStore } = await import('./usePhishingForensicsStore');
+      usePhishingForensicsStore.getState().reset();
+      const { usePhishingQuizStore } = await import('./usePhishingQuizStore');
+      usePhishingQuizStore.getState().reset();
+
+      return result;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to save game progress.';
       set({ error: message, isSubmitting: false });
+      return null;
     }
   },
 
-  submitGameWithRawScore: async (rawScore: number) => {
-    const { token, gameModuleId } = get();
-    if (!token || !gameModuleId) return;
-
-    // Transition immediately so the UI unmounts the game and shows the redirect message.
-    // The API call runs in the background and updates gameResult when it resolves.
-    set({
-      phase: 'complete',
-      gameResult: { xpAwarded: 0, totalPoints: 0, expLvl: 0, isRemediated: false, message: 'Saving…' },
-      isSubmitting: true,
-      error: null,
-    });
-
-    try {
-      const { recoveryAPI } = await import('@/lib/api');
-      const response = await recoveryAPI.saveGameProgress(token, rawScore, gameModuleId);
-      set({ gameResult: response.data, isSubmitting: false });
-      useAuthStore.getState().updateUser({
-        totalPoints: response.data.totalPoints,
-        expLvl: response.data.expLvl,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save game progress.';
-      set({ error: message, isSubmitting: false });
-    }
+  markComplete: () => {
+    set({ phase: 'submitted' });
   },
 
   reset: () => {

@@ -72,7 +72,13 @@ Console.WriteLine($"════════════════════
 // ────────────────────────────────────────────────────────────────────────────
 // Add DbContext with PostgreSQL
 builder.Services.AddDbContext<InnovationsprojektDbContext>(options =>
-    options.UseNpgsql(connectionString)
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null
+        )
+    )
 );
 Console.WriteLine("✓ Configured DbContext with PostgreSQL");
 

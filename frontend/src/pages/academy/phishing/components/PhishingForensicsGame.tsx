@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import { usePhishingForensicsStore, getPhishingForensicsSnapshot } from '@/store/usePhishingForensicsStore';
+import { useGameStore } from '@/store/useGameStore';
+import type { GameResult } from '@/store/useGameStore';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -90,16 +93,26 @@ function SuspiciousZone({ id, children, tooltipTitle, tooltipText, style, foundC
 // ── Main Component ────────────────────────────────────────────────────────────
 
 interface Props {
-  onComplete: (score: number) => void;
+  // Called when the user submits their verdict — makes the API call and
+  // returns the backend result (including the real xpAwarded).
+  onSubmit: (score: number, stateData: object) => Promise<GameResult>;
+  // Called when the user dismisses the result modal — triggers navigation.
+  onComplete: () => void;
 }
 
-export default function DetectiveStoryGame({ onComplete }: Props) {
-  const [foundClues, setFoundClues] = useState<string[]>([]);
+export default function PhishingForensicsGame({ onSubmit, onComplete }: Props) {
+  // ── Store — persistent game state ────────────────────────────────────────
+  const {
+    foundZoneIds, cluesFound, verdict,
+    initGame, recordZoneAttempt, submitVerdict, completeGame, reset,
+  } = usePhishingForensicsStore();
+
+  const isSubmitting = useGameStore(s => s.isSubmitting);
+
+  // ── Local — pure UI state (not worth persisting) ─────────────────────────
   const [hintsEnabled, setHintsEnabled] = useState(false);
-  const [verdict, setVerdict] = useState<'safe' | 'scam' | null>(null);
   const [noVerdictError, setNoVerdictError] = useState(false);
   const [modalState, setModalState] = useState<ModalState>({ active: false, title: '', body: '', color: '' });
-  const [finalScore, setFinalScore] = useState(0);
 
   const [wheelState, setWheelState] = useState<WheelState>({
     active: false, x: 0, y: 0,
@@ -108,9 +121,21 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
 
   const [fadingTooltips, setFadingTooltips] = useState<Set<string>>(new Set());
 
+  // ── Init — resume if same game module, otherwise start fresh ────────────
+  useEffect(() => {
+    const gameModuleId = useGameStore.getState().gameModuleId;
+    if (!gameModuleId) return;
+    const existingId = usePhishingForensicsStore.getState().gameModuleId;
+    if (existingId !== gameModuleId) {
+      reset();
+      initGame(gameModuleId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Helpers ───────────────────────────────────────────────────────────────
   const getArtificialityScore = () => {
-    const percentage = Math.min(Math.round((foundClues.length / TOTAL_CLUES) * 98), 98);
+    const percentage = Math.min(Math.round((cluesFound / TOTAL_CLUES) * 98), 98);
     let color = 'hsl(var(--success))';
     if (percentage > 70) color = 'hsl(var(--destructive))';
     else if (percentage > 40) color = 'hsl(var(--accent))';
@@ -121,7 +146,7 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
   const handleZoneClick = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (e.target instanceof HTMLAnchorElement) e.preventDefault();
-    if (foundClues.includes(id)) return;
+    if (foundZoneIds.includes(id)) return;
     setWheelState({ active: true, x: e.clientX, y: e.clientY, activeZoneId: id, shake: false, wrongBtnIndex: null });
   };
 
@@ -131,9 +156,10 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
     e.stopPropagation();
     if (!wheelState.activeZoneId) return;
 
-    if (selectedReason === wheelState.activeZoneId) {
-      const newFoundClues = [...foundClues, wheelState.activeZoneId];
-      setFoundClues(newFoundClues);
+    const isCorrect = selectedReason === wheelState.activeZoneId;
+    recordZoneAttempt(wheelState.activeZoneId, selectedReason, isCorrect);
+
+    if (isCorrect) {
       setTimeout(() => {
         setFadingTooltips(prev => { const next = new Set(prev); next.add(selectedReason); return next; });
       }, 5000);
@@ -144,27 +170,31 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!verdict) {
       setNoVerdictError(true);
       setTimeout(() => setNoVerdictError(false), 2500);
       return;
     }
 
-    const cluesCount = foundClues.length;
-    const BASE_XP = 150;
-    const XP_PER_CLUE = 40;
-    const totalXP = BASE_XP + cluesCount * XP_PER_CLUE;
-    const score = verdict === 'scam' ? Math.round((cluesCount / TOTAL_CLUES) * 100) : 0;
-    setFinalScore(score);
+    const score = verdict === 'SCHÄDLICH' ? Math.round((cluesFound / TOTAL_CLUES) * 100) : 0;
 
+    // Mark complete in sessionStorage (sets completedAt), then snapshot for stateData
+    completeGame(score, 0);
+    const stateData = getPhishingForensicsSnapshot();
+
+    // API call — XP is calculated exclusively on the backend
+    const result = await onSubmit(score, stateData);
+    if (!result) return; // error is surfaced via store.error; don't open modal
+
+    // Open modal with the real xpAwarded from the backend
     let newModal: ModalState = { active: true, title: '', body: '', color: '' };
-    if (verdict === 'scam') {
+    if (verdict === 'SCHÄDLICH') {
       newModal.title = 'FALL GELÖST';
       newModal.color = 'hsl(var(--success))';
-      newModal.body = cluesCount === TOTAL_CLUES
-        ? `Perfekte Punktzahl! Sie haben alle <strong>${TOTAL_CLUES}</strong> Hinweise gefunden.<br><br>Basis-Belohnung: +${BASE_XP}<br>Hinweis-Bonus: +${cluesCount * XP_PER_CLUE}<br><strong>Gesamt verdient: +${totalXP} XP</strong>`
-        : `Gute Arbeit! Sie haben die Bedrohung erkannt, aber <strong>${TOTAL_CLUES - cluesCount}</strong> Hinweise übersehen.<br><br>Basis-Belohnung: +${BASE_XP}<br>Hinweis-Bonus: +${cluesCount * XP_PER_CLUE}<br><strong>Gesamt verdient: +${totalXP} XP</strong>`;
+      newModal.body = cluesFound === TOTAL_CLUES
+        ? `Perfekte Punktzahl! Sie haben alle <strong>${TOTAL_CLUES}</strong> Hinweise gefunden.<br><br><strong>Verdient: +${result.xpAwarded} XP</strong>`
+        : `Gute Arbeit! Sie haben die Bedrohung erkannt, aber <strong>${TOTAL_CLUES - cluesFound}</strong> Hinweise übersehen.<br><br>Trefferquote: ${score}%<br><strong>Verdient: +${result.xpAwarded} XP</strong>`;
     } else {
       newModal.title = 'SICHERHEITSVERLETZUNG';
       newModal.color = 'hsl(var(--destructive))';
@@ -180,20 +210,15 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
   }, [wheelState.active]);
 
   const scoreData = getArtificialityScore();
-  const zoneProps = { foundClues, fadingTooltips, onZoneClick: handleZoneClick };
+  const zoneProps = { foundClues: foundZoneIds, fadingTooltips, onZoneClick: handleZoneClick };
 
   // ── Scoped CSS ────────────────────────────────────────────────────────────
-  // Only rules that Tailwind cannot express: keyframes, pseudo-elements,
-  // complex descendant selectors, and the absolute-positioned wheel/tooltip.
   const scopedCSS = `
-    /* Suspicious zone hover & found states */
     .dsg-zone { position: relative; border-bottom: 2px dashed transparent; cursor: cell; transition: all 0.2s; padding: 0 2px; display: inline-block; }
     div.dsg-zone { display: inline-block; }
     .dsg-zone:hover { background-color: hsl(var(--accent) / 0.15); border-bottom-color: hsl(var(--accent) / 0.6); }
     .dsg-zone.found { background-color: hsl(var(--destructive) / 0.2); border: 1px solid hsl(var(--destructive)); border-radius: 3px; cursor: default; }
     .dsg-zone a { text-decoration: none; color: white; }
-
-    /* Tooltip */
     @keyframes dsg-popIn { 0% { transform: translate(-50%,0) scale(0.9); opacity: 0; } 100% { transform: translate(-50%,0) scale(1); opacity: 1; } }
     @keyframes dsg-fadeOut { from { opacity: 1; pointer-events: auto; } to { opacity: 0; pointer-events: none; visibility: hidden; } }
     .dsg-zone.found .dsg-tooltip { display: block; animation: dsg-popIn 0.2s ease-out forwards; }
@@ -201,25 +226,17 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
     .dsg-tooltip { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: hsl(var(--card)); color: hsl(var(--card-foreground)); padding: 8px 12px; border-radius: var(--radius); font-size: 0.8rem; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 1px solid hsl(var(--accent)); z-index: 10; margin-bottom: 5px; transition: opacity 0.2s ease; display: none; }
     .dsg-tooltip:hover { opacity: 0.2; }
     .dsg-tooltip-tag { color: hsl(var(--accent)); font-weight: bold; display: block; margin-bottom: 2px; font-size: 0.7rem; text-transform: uppercase; }
-
-    /* Evidence hints toggle (blur unfound items) */
     .dsg-hints-off .dsg-evidence-item:not(.dsg-checked) .dsg-evidence-text { filter: blur(5px); opacity: 0.4; user-select: none; transition: filter 0.3s ease, opacity 0.3s ease; }
-
-    /* Toggle switch slider ::before */
     .dsg-slider { position: absolute; cursor: pointer; inset: 0; background-color: hsl(var(--muted)); transition: .4s; border-radius: 34px; }
     .dsg-slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
     input:checked + .dsg-slider { background-color: hsl(var(--primary)); }
     input:checked + .dsg-slider:before { transform: translateX(14px); }
-
-    /* Verdict button selected states & ::after "AUSGEWÄHLT" badge */
     .dsg-btn-safe { background: hsl(var(--card)); border: 2px solid hsl(var(--success)); color: hsl(var(--success)); opacity: 0.6; }
     .dsg-btn-safe.selected { background: hsl(var(--success)); color: hsl(var(--success-foreground)); opacity: 1; box-shadow: 0 0 15px hsl(var(--success) / 0.4); position: relative; }
     .dsg-btn-safe.selected::after { content: 'AUSGEWÄHLT'; position: absolute; top: -10px; right: -10px; background: white; color: hsl(var(--success)); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; }
     .dsg-btn-scam { background: hsl(var(--card)); border: 2px solid hsl(var(--destructive)); color: hsl(var(--destructive)); opacity: 0.6; }
     .dsg-btn-scam.selected { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); opacity: 1; box-shadow: 0 0 15px hsl(var(--destructive) / 0.4); position: relative; }
     .dsg-btn-scam.selected::after { content: 'AUSGEWÄHLT'; position: absolute; top: -10px; right: -10px; background: white; color: hsl(var(--destructive)); font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; }
-
-    /* Radial context wheel */
     .dsg-wheel { position: fixed; width: 240px; height: 240px; transform: translate(-50%,-50%) scale(0); z-index: 999; pointer-events: none; opacity: 0; transition: transform 0.2s cubic-bezier(0.175,0.885,0.32,1.275), opacity 0.2s ease; }
     .dsg-wheel.active { transform: translate(-50%,-50%) scale(1); opacity: 1; pointer-events: all; }
     @keyframes dsg-shake { 0%,100% { transform: translate(-50%,-50%) translateX(0); } 25%,75% { transform: translate(-50%,-50%) translateX(-8px); } 50% { transform: translate(-50%,-50%) translateX(8px); } }
@@ -229,86 +246,18 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
     .dsg-wheel-btn { position: absolute; width: 90px; padding: 6px 8px; background: hsl(var(--card)); border: 1px solid hsl(var(--border)); color: hsl(var(--foreground)); font-size: 0.7rem; font-weight: bold; border-radius: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: all 0.2s; text-align: center; white-space: nowrap; top: 50%; left: 50%; margin-top: -15px; margin-left: -45px; }
     .dsg-wheel-btn:hover { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); z-index: 10; }
     .dsg-wheel-btn.wrong { background: hsl(var(--destructive)); border-color: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
-
-    /* Responsive: collapse sidebar */
     @media (max-width: 1200px) { .dsg-grid { grid-template-columns: 0 1fr 320px !important; } }
   `;
 
   return (
-    // Force dark mode tokens for the entire game widget
     <div className="dark bg-background text-foreground h-screen flex flex-col overflow-hidden relative" style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif" }}>
       <style>{scopedCSS}</style>
 
-      {/* ── Header ── */}
-      <header className="bg-card border-b border-border px-6 h-[70px] flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-2.5 font-bold text-lg tracking-[0.5px]">
-          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center text-xl">🛡️</div>
-          <div>Digital Defense <span className="text-muted-foreground font-normal">Agency</span></div>
-        </div>
-
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-1.5 text-accent font-bold">🔥 12 Tage Serie</div>
-          <div className="bg-muted px-3 py-1 rounded-full text-sm border border-border">
-            Analyst: <span className="text-primary font-bold">Phishing</span>
-          </div>
-          <div className="flex flex-col w-[220px] gap-1">
-            <div className="flex justify-between text-xs text-muted-foreground font-semibold">
-              <span>Beweise gefunden</span>
-              <span>{foundClues.length}/{TOTAL_CLUES}</span>
-            </div>
-            <div className="h-2 bg-muted rounded overflow-hidden">
-              <div
-                className="h-full rounded transition-all duration-300"
-                style={{ width: `${(foundClues.length / TOTAL_CLUES) * 100}%`, background: 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.7))' }}
-              />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ── 3-Column Grid ── */}
+      {/* ── 2-Column Grid ── */}
       <div
         className="dsg-grid grid flex-1 overflow-hidden"
-        style={{ gridTemplateColumns: '240px 1fr 320px', gap: '1px', backgroundColor: 'hsl(var(--border))' }}
+        style={{ gridTemplateColumns: '1fr 320px', gap: '1px', backgroundColor: 'hsl(var(--border))' }}
       >
-        {/* Left: Toolkit Sidebar */}
-        <aside className="bg-card p-5 overflow-y-auto">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Standard Werkzeuge</p>
-          {[
-            { icon: '🔍', label: 'Fall-Ermittlung', active: true },
-            { icon: '📧', label: 'Header-Analyse', active: false },
-          ].map(btn => (
-            <button
-              key={btn.label}
-              className={`flex items-center gap-3 w-full p-3 rounded-[var(--radius)] border mb-2 text-left text-sm transition-all cursor-pointer
-                ${btn.active
-                  ? 'bg-primary/20 text-primary border-primary font-semibold'
-                  : 'bg-transparent border-transparent text-muted-foreground hover:bg-primary/10 hover:text-foreground hover:border-primary/30'
-                }`}
-            >
-              <span className="w-6 text-center">{btn.icon}</span>
-              <span>{btn.label}</span>
-            </button>
-          ))}
-
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-5 mb-3">Erweiterte Forensik</p>
-          {['🧠 Logik-Check', '🌍 Rückwärtssuche', '🔬 Pixel-DeepScan'].map(item => {
-            const [icon, ...rest] = item.split(' ');
-            return (
-              <button key={item} className="flex items-center gap-3 w-full p-3 rounded-[var(--radius)] border border-transparent mb-2 text-left text-sm text-muted-foreground hover:bg-primary/10 hover:text-foreground hover:border-primary/30 transition-all cursor-pointer bg-transparent">
-                <span className="w-6 text-center">{icon}</span>
-                <span>{rest.join(' ')}</span>
-              </button>
-            );
-          })}
-
-          <p className="text-xs uppercase tracking-widest text-muted-foreground mt-5 mb-3">Gesperrt (Lvl 5+)</p>
-          <button className="flex items-center gap-3 w-full p-3 rounded-[var(--radius)] border border-transparent mb-2 text-left text-sm text-muted-foreground opacity-50 cursor-not-allowed bg-transparent">
-            <span className="w-6 text-center">🔒</span>
-            <span>Audio-Wellenform</span>
-          </button>
-        </aside>
-
         {/* Center: Active Case */}
         <main className="bg-background p-5 overflow-y-auto">
           <div className="flex justify-between items-center mb-5">
@@ -329,7 +278,6 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
               <span>Bedrohungsstufe: Unbekannt</span>
             </div>
 
-            {/* Email mockup — intentionally light to simulate a real email client */}
             <div className="p-8 min-h-[250px]" style={{ fontFamily: 'Arial, sans-serif', background: '#e2e8f0', color: '#1e293b' }}>
               <div className="mb-5 pb-4 border-b border-[#cbd5e1]">
                 <div className="flex mb-2 text-sm">
@@ -380,11 +328,10 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
         <aside className="bg-card border-l border-border p-5 overflow-y-auto">
           <h3 className="text-base font-semibold text-foreground mb-5">Untersuchungsbericht</h3>
 
-          {/* Evidence list */}
           <div className="bg-foreground/[0.03] rounded-[var(--radius)] p-4 mb-5">
             <div className="flex justify-between items-center mb-3">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                Gesammelte Beweise ({foundClues.length}/{TOTAL_CLUES})
+                Gesammelte Beweise ({cluesFound}/{TOTAL_CLUES})
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">Hinweise</span>
@@ -397,7 +344,7 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
 
             <ul className={hintsEnabled ? '' : 'dsg-hints-off'}>
               {EVIDENCE_LIST.map(item => {
-                const isChecked = foundClues.includes(item.id);
+                const isChecked = foundZoneIds.includes(item.id);
                 return (
                   <li key={item.id} className={`dsg-evidence-item flex items-center gap-2.5 py-2 border-b border-border last:border-b-0 text-sm transition-all ${isChecked ? 'dsg-checked text-foreground' : 'text-muted-foreground'}`}>
                     <span className={`dsg-check w-4 h-4 flex items-center justify-center font-bold rounded-full border text-[0.7rem] flex-shrink-0 transition-all ${isChecked ? 'bg-[hsl(var(--success))] border-[hsl(var(--success))] text-white' : 'border-muted-foreground/40'}`}>
@@ -410,7 +357,6 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
             </ul>
           </div>
 
-          {/* Artificiality score */}
           <div className="bg-foreground/[0.03] rounded-[var(--radius)] p-4 mb-5">
             <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Kontext-Analyse</p>
             <div className="flex justify-between items-center">
@@ -422,17 +368,16 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
             </div>
           </div>
 
-          {/* Verdict */}
           <div className="mt-8">
             <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Endgültiges Urteil</p>
             <p className="text-xs text-muted-foreground mb-2.5">
               Wählen Sie die entsprechende Klassifizierung, um Fall #4092 abzuschließen.
             </p>
             <div className="flex gap-2.5 mt-2.5">
-              <button className={`dsg-btn-safe flex-1 py-3 rounded-[var(--radius)] font-bold cursor-pointer transition-all ${verdict === 'safe' ? 'selected' : ''}`} onClick={() => setVerdict('safe')}>
+              <button className={`dsg-btn-safe flex-1 py-3 rounded-[var(--radius)] font-bold cursor-pointer transition-all ${verdict === 'LEGITIM' ? 'selected' : ''}`} onClick={() => submitVerdict('LEGITIM', false)}>
                 LEGITIM
               </button>
-              <button className={`dsg-btn-scam flex-1 py-3 rounded-[var(--radius)] font-bold cursor-pointer transition-all ${verdict === 'scam' ? 'selected' : ''}`} onClick={() => setVerdict('scam')}>
+              <button className={`dsg-btn-scam flex-1 py-3 rounded-[var(--radius)] font-bold cursor-pointer transition-all ${verdict === 'SCHÄDLICH' ? 'selected' : ''}`} onClick={() => submitVerdict('SCHÄDLICH', true)}>
                 SCHÄDLICH
               </button>
             </div>
@@ -440,29 +385,13 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
               <p className="text-destructive text-xs mt-2 text-center">Bitte wählen Sie zuerst ein Urteil.</p>
             )}
             <button
-              className="w-full mt-4 py-3 rounded-[var(--radius)] font-bold text-primary-foreground border-none cursor-pointer transition-opacity hover:opacity-90"
+              className="w-full mt-4 py-3 rounded-[var(--radius)] font-bold text-primary-foreground border-none cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'hsl(var(--primary))', boxShadow: '0 4px 10px hsl(var(--primary) / 0.3)' }}
               onClick={handleSubmit}
+              disabled={isSubmitting}
             >
-              AN ZENTRALE SENDEN
+              {isSubmitting ? 'Wird gesendet…' : 'AN ZENTRALE SENDEN'}
             </button>
-          </div>
-
-          {/* Leaderboard */}
-          <div className="mt-10 pt-5 border-t border-border">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-3">Abteilungs-Bestenliste</p>
-            <div className="flex justify-between text-sm mt-2.5">
-              <span className="text-foreground">1. Technik</span>
-              <span style={{ color: 'hsl(var(--success))' }}>98% Sicher</span>
-            </div>
-            <div className="flex justify-between text-sm mt-2 opacity-70">
-              <span>2. Vertrieb (Du)</span>
-              <span className="text-accent">84% Sicher</span>
-            </div>
-            <div className="flex justify-between text-sm mt-2 opacity-50">
-              <span>3. HR</span>
-              <span className="text-muted-foreground">79% Sicher</span>
-            </div>
           </div>
         </aside>
       </div>
@@ -497,7 +426,10 @@ export default function DetectiveStoryGame({ onComplete }: Props) {
           <button
             className="w-full py-2.5 px-5 rounded-[var(--radius)] font-bold text-primary-foreground border-none cursor-pointer text-base hover:opacity-90 transition-opacity"
             style={{ background: 'hsl(var(--primary))' }}
-            onClick={() => onComplete(finalScore)}
+            onClick={() => {
+              setModalState(prev => ({ ...prev, active: false }));
+              onComplete();
+            }}
           >
             Weiter →
           </button>
