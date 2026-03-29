@@ -33,9 +33,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo / Brand */}
           <Link to="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-              🔍
-            </div>
+            <img src="/logo.svg" alt="Innovationsprojekt" className="w-8 h-8" />
             <span className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
               Innovationsprojekt
             </span>
